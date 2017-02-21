@@ -126,127 +126,142 @@ struct VertexRelabel : public GraphChiProgram<VertexDataType, EdgeDataType> {
      */
     void update(graphchi_vertex<VertexDataType, EdgeDataType> &vertex, graphchi_context &gcontext) {
         //TODO: can scheduling make a difference so that label updates can be synchronized?
-        assert(gcontext.scheduler != NULL);
-        if (gcontext.iteration == 0) {
-            /* On first iteration, initialize vertex (and its edges). This is usually required, because
-             on each run, GraphChi will modify the data files. To start from scratch, it is easiest
-             do initialize the program in code. Alternatively, you can keep a copy of initial data files. */
-            // First for each vertex, set its label as its w3ctype
-            std::string vertex_label = "";
-            // The value can be obtained from any outedge (from src_type) or in_edge from (dst_type)
-            graphchi_edge<EdgeDataType> * outedge = vertex.random_outedge();
-            //if the node has no outedge, we get a first inedge in the queue
-            if (outedge == NULL) {
-                graphchi_edge<EdgeDataType> * inedge = vertex.inedge(0);
-                //get the dst_type from inedge
-                int vertex_int_label = inedge->get_data().new_dst;
-                std::string num_string;
-                std::stringstream out;
-                out << vertex_int_label;
-                vertex_label = out.str();
-            } else {
-                //get the src_type from outedge
-                int vertex_int_label = outedge->get_data().new_src;
-                std::string num_string;
-                std::stringstream out;
-                out << vertex_int_label;
-                vertex_label = out.str();
+        //assert(gcontext.scheduler != NULL);
+        if (gcontext.iteration % 2 == 1) {
+            for(int i=0; i < vertex.num_inedges(); i++) {
+                graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
+                type_label in_type = in_edge->get_data();
+                in_type.old_dst = in_type.new_dst;
+                in_edge->set_data(in_type);
+                logstream(LOG_INFO) << "Swapped in edges of " << vertex.id() << " to " << in_type.old_dst << std::endl;
             }
-            //make sure vertex must have a valid string, not an empty string
-            if (vertex_label != "") {
+            for (int i=0; i < vertex.num_outedges(); i++) {
+                graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
+                type_label out_type = out_edge->get_data();
+                out_type.old_src = out_type.new_src;
+                out_edge->set_data(out_type);
+                logstream(LOG_INFO) << "Swapped out edges of " << vertex.id() << " to " << out_type.old_src << std::endl;
+            }
+        } else {
+            if (gcontext.iteration == 0) {
+                /* On first iteration, initialize vertex (and its edges). This is usually required, because
+                 on each run, GraphChi will modify the data files. To start from scratch, it is easiest
+                 do initialize the program in code. Alternatively, you can keep a copy of initial data files. */
+                // First for each vertex, set its label as its w3ctype
+                std::string vertex_label = "";
+                // The value can be obtained from any outedge (from src_type) or in_edge from (dst_type)
+                graphchi_edge<EdgeDataType> * outedge = vertex.random_outedge();
+                //if the node has no outedge, we get a first inedge in the queue
+                if (outedge == NULL) {
+                    graphchi_edge<EdgeDataType> * inedge = vertex.inedge(0);
+                    //get the dst_type from inedge
+                    int vertex_int_label = inedge->get_data().new_dst;
+                    std::string num_string;
+                    std::stringstream out;
+                    out << vertex_int_label;
+                    vertex_label = out.str();
+                } else {
+                    //get the src_type from outedge
+                    int vertex_int_label = outedge->get_data().new_src;
+                    std::string num_string;
+                    std::stringstream out;
+                    out << vertex_int_label;
+                    vertex_label = out.str();
+                }
+                //make sure vertex must have a valid string, not an empty string
+                if (vertex_label != "") {
+                    relabel_map_lock.lock();
+                    int label_map_label = insert_relabel(vertex_label);
+                    relabel_map_lock.unlock();
+                    label_map_lock.lock();
+                    insert_label(label_map_label);
+                    label_map_lock.unlock();
+                    vertex.set_data(label_map_label);
+                    logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label << std::endl;
+                } else {
+                    logstream(LOG_FATAL) << "Invalid vertex_label in relabel_map. " << std::endl;
+                    assert (vertex_label != "");
+                }
+            } else {
+                std::vector<int> label_vec;
+                for(int i=0; i < vertex.num_inedges(); i++) {
+                    graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
+                    int int_in_type = in_edge->get_data().old_src;
+                    label_vec.push_back(int_in_type);
+                    logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
+                }
+                for (int i=0; i < vertex.num_outedges(); i++) {
+                    graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
+                    int int_out_type = out_edge->get_data().old_dst;
+                    label_vec.push_back(int_out_type);
+                    logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
+                }
+                std::sort(label_vec.begin(), label_vec.end());
+                int self_label = vertex.get_data();
+                label_vec.push_back(self_label);
+                
+                std::string new_label = "";
+                std::string first_num_string;
+                std::stringstream first_out;
+                first_out << *(label_vec.end() - 1);
+                first_num_string = first_out.str();
+                new_label += first_num_string;
+                new_label += ",";
+
+                for (std::vector<int>::iterator it = label_vec.begin(); it != label_vec.end() - 1; ++it) {
+                    std::string num_string;
+                    std::stringstream out;
+                    out << *it;
+                    num_string = out.str();
+                    new_label += num_string + " ";
+                }
+                
                 relabel_map_lock.lock();
-                int label_map_label = insert_relabel(vertex_label);
+                int label_map_label = insert_relabel(new_label);
                 relabel_map_lock.unlock();
                 label_map_lock.lock();
                 insert_label(label_map_label);
                 label_map_lock.unlock();
                 vertex.set_data(label_map_label);
                 logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label << std::endl;
+            }
+            
+            // broadcast new label to neighbors by writing the value to the edges
+            // write to the src_type if the vertex is the source vertex of the incident edge
+            // write to the dst_type if the vertex is the destination vertex of the incident edge
+            int label = vertex.get_data();
+            if (gcontext.iteration == 0) {
+                for(int i=0; i < vertex.num_inedges(); i++) {
+                    graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
+                    type_label in_type = in_edge->get_data();
+                    in_type.new_dst = label;
+                    in_edge->set_data(in_type);
+                }
+                for (int i=0; i < vertex.num_outedges(); i++) {
+                    graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
+                    type_label out_type = out_edge->get_data();
+                    out_type.new_src = label;
+                    out_edge->set_data(out_type);
+                }
             } else {
-                logstream(LOG_FATAL) << "Invalid vertex_label in relabel_map. " << std::endl;
-                assert (vertex_label != "");
+                for(int i=0; i < vertex.num_inedges(); i++) {
+                    graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
+                    type_label in_type = in_edge->get_data();
+                    in_type.new_dst = label;
+                    in_edge->set_data(in_type);
+                    logstream(LOG_INFO) << "Updated in edges of " << vertex.id() << " to " << in_type.old_dst << std::endl;
+                }
+                for (int i=0; i < vertex.num_outedges(); i++) {
+                    graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
+                    type_label out_type = out_edge->get_data();
+                    out_type.new_src = label;
+                    out_edge->set_data(out_type);
+                    logstream(LOG_INFO) << "Updated out edges of " << vertex.id() << " to " << out_type.old_src << std::endl;
+                }
             }
-        } else {
-            std::vector<int> label_vec;
-            for(int i=0; i < vertex.num_inedges(); i++) {
-                graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
-                int int_in_type = in_edge->get_data().old_src;
-                label_vec.push_back(int_in_type);
-                logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
-            }
-            for (int i=0; i < vertex.num_outedges(); i++) {
-                graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
-                int int_out_type = out_edge->get_data().old_dst;
-                label_vec.push_back(int_out_type);
-                logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
-            }
-            int self_label = vertex.get_data();
-            label_vec.push_back(self_label);
-            std::sort(label_vec.begin(), label_vec.end());
-            
-            std::string new_label = "";
-            for (std::vector<int>::iterator it = label_vec.begin(); it != label_vec.end() - 1; ++it) {
-                std::string num_string;
-                std::stringstream out;
-                out << *it;
-                num_string = out.str();
-                new_label += num_string + ",";
-            }
-            std::string last_num_string;
-            std::stringstream last_out;
-            last_out << *(label_vec.end() - 1);
-            last_num_string = last_out.str();
-            new_label += last_num_string;
-            
-            relabel_map_lock.lock();
-            int label_map_label = insert_relabel(new_label);
-            relabel_map_lock.unlock();
-            label_map_lock.lock();
-            insert_label(label_map_label);
-            label_map_lock.unlock();
-            vertex.set_data(label_map_label);
-            logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label << std::endl;
+            /* Scheduler myself for next iteration */
+            //gcontext.scheduler->add_task(vertex.id());
         }
-        
-        // broadcast new label to neighbors by writing the value to the edges
-        // write to the src_type if the vertex is the source vertex of the incident edge
-        // write to the dst_type if the vertex is the destination vertex of the incident edge
-        int label = vertex.get_data();
-        if (gcontext.iteration == 0) {
-            for(int i=0; i < vertex.num_inedges(); i++) {
-                graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
-                type_label in_type = in_edge->get_data();
-                in_type.old_dst = label;
-                in_type.new_dst = label;
-                in_edge->set_data(in_type);
-            }
-            for (int i=0; i < vertex.num_outedges(); i++) {
-                graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
-                type_label out_type = out_edge->get_data();
-                out_type.old_src = label;
-                out_type.new_src = label;
-                out_edge->set_data(out_type);
-            }
-        } else {
-            for(int i=0; i < vertex.num_inedges(); i++) {
-                graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
-                type_label in_type = in_edge->get_data();
-                in_type.old_dst = in_type.new_dst;
-                in_type.new_dst = label;
-                in_edge->set_data(in_type);
-                logstream(LOG_INFO) << "Updated in edges of " << vertex.id() << " to " << in_type.old_dst << std::endl;
-            }
-            for (int i=0; i < vertex.num_outedges(); i++) {
-                graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
-                type_label out_type = out_edge->get_data();
-                out_type.old_src = out_type.new_src;
-                out_type.new_src = label;
-                out_edge->set_data(out_type);
-                logstream(LOG_INFO) << "Updated out edges of " << vertex.id() << " to " << out_type.old_src << std::endl;
-            }
-        }
-        /* Scheduler myself for next iteration */
-        gcontext.scheduler->add_task(vertex.id());
     }
     
     /**
@@ -291,10 +306,10 @@ int main(int argc, const char ** argv) {
     
     /* Basic arguments for application */
     std::string filename = get_option_string("file");  // Base filename
-    int niters           = get_option_int("niters", 5); // Number of iterations
+    int niters           = get_option_int("niters", 10); // Number of iterations
     //bool scheduler       = get_option_int("scheduler", 0); // Whether to use selective scheduling
     //TODO: should I use selective scheduling?
-    bool scheduler       = true;
+    bool scheduler       = false;
     
     /* Detect the number of shards or preprocess an input to create them */
     int nshards          = convert_if_notexists<EdgeDataType>(filename,
