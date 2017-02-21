@@ -47,6 +47,7 @@
 #include <errno.h>
 #include <sstream>
 #include <string>
+#include <typeinfo>
 
 #include "api/chifilenames.hpp"
 #include "api/graphchi_context.hpp"
@@ -372,7 +373,7 @@ namespace graphchi {
             curshovel_buffer = (edge_with_value<EdgeDataType> *) calloc(shovelsize, sizeof(edge_with_value<EdgeDataType>));
             
             assert(curshovel_buffer != NULL);
-            
+            logstream(LOG_INFO) << "Edge:" <<  sizeof(edge_with_value<EdgeDataType>) << std::endl;
             shovelthreads.clear();
             
             /* Write the maximum vertex id place holder - to be filled later */
@@ -428,7 +429,7 @@ namespace graphchi {
             if (from == to) {
                 // Do not allow self-edges
                 return;
-            }  
+            }
             edge_with_value<EdgeDataType> e(from, to, val);
 #ifdef DYNAMICEDATA
             e.is_chivec_value = input_value;
@@ -441,7 +442,6 @@ namespace graphchi {
             if (curshovel_idx == shovelsize) {
                 flush_shovel();
             }
-            
             max_vertex_id = std::max(std::max(from, to), max_vertex_id);
         }
         

@@ -36,7 +36,7 @@
 
 #include <fstream>
 #include <iostream>
-
+#include <string>
 
 
 #include "graphchi_types.hpp"
@@ -117,6 +117,8 @@ namespace graphchi {
     static void parse(short &x, const char * s) {
         x = (short) atoi(s);
     }
+    
+
     
 #ifdef DYNAMICEDATA
     static void VARIABLE_IS_NOT_USED parse_multiple(std::vector<dummy> &values, char * s);
@@ -251,7 +253,6 @@ namespace graphchi {
             
             /* Check if has value */
             t = strtok(NULL, delims);
-            
             if (!multivalue_edges) {
                 EdgeDataType val;
                 if (t != NULL) {
@@ -267,7 +268,6 @@ namespace graphchi {
             } else {
 #ifdef DYNAMICEDATA
                 std::vector<EdgeDataType> vals;
-                
                 parse_multiple(vals, (char*) t);
                 if (from != to) {
                     if (vals.size() == 0) {

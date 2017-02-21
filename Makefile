@@ -1,7 +1,7 @@
 INCFLAGS = -I/usr/local/include/ -I./src/
 
-CPP = g++
-CPPFLAGS = -g -O3 $(INCFLAGS)  -fopenmp -Wall -Wno-strict-aliasing 
+CPP = g++-4.9
+CPPFLAGS = -std=c++0x -g -O3 $(INCFLAGS)  -fopenmp -Wall -Wno-strict-aliasing 
 LINKERFLAGS = -lz
 DEBUGFLAGS = -g -ggdb $(INCFLAGS)
 HEADERS=$(shell find . -name '*.hpp')
@@ -29,9 +29,7 @@ sharder_basic: src/preprocessing/sharder_basic.cpp $(HEADERS)
 
 example_apps/% : example_apps/%.cpp $(HEADERS)
 	@mkdir -p bin/$(@D)
-	$(CPP) $(CPPFLAGS) -Iexample_apps/ $@.cpp -o bin/$@ $(LINKERFLAGS) 
-
-
+	$(CPP) $(CPPFLAGS) -Wunused-function -Iexample_apps/ $@.cpp -o bin/$@ $(LINKERFLAGS) 
 
 myapps/% : myapps/%.cpp $(HEADERS)
 	@mkdir -p bin/$(@D)

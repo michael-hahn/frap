@@ -992,7 +992,7 @@ namespace graphchi {
         }
         
         virtual void iteration_finished() {
-            // Do nothing
+            std::cout << "Iteration" << std::endl;
         }
         
         stripedio * get_iomanager() {
