@@ -553,6 +553,7 @@ int main(int argc, const char ** argv) {
     
     /* Basic arguments for application */
     std::string filename = get_option_string("file");  // Base filename
+    std::string filename2 = get_option_string("file2");
     int niters           = get_option_int("niters", 10); // Number of iterations
     //bool scheduler       = get_option_int("scheduler", 0); // Whether to use selective scheduling
     //TODO: should I use selective scheduling?
@@ -562,13 +563,15 @@ int main(int argc, const char ** argv) {
     int nshards          = convert_if_notexists<EdgeDataType>(filename,
                                                              get_option_string("nshards", "auto"));
     
+    int nshards2         = convert_if_notexists<EdgeDataType>(filename2,
+                                                              get_option_string("nshards", "auto"));
     /* Run */
     VertexRelabel program;
     graphchi_engine<VertexDataType, EdgeDataType> engine(filename, nshards, scheduler, m);
     engine.run(program, niters);
     
     VertexRelabel2 program2;
-    graphchi_engine<VertexDataType, EdgeDataType> engine2(filename, nshards, scheduler, m);
+    graphchi_engine<VertexDataType, EdgeDataType> engine2(filename2, nshards2, scheduler, m);
     engine2.run(program2, niters);
     
     //Print maps
