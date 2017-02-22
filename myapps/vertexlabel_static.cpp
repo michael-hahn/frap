@@ -54,7 +54,9 @@ public:
     
     void print_relabel_map ();
     
-    void print_label_map (std::map<int, int>lmap) ;
+    void print_label_map (std::map<int, int>lmap);
+    
+    int calculate_kernel(std::map<int, int>& map1, std::map<int, int>& map2);
     
     std::map<int, int> label_map;//for the first graph
     std::map<int, int> label_map_2;//for the second graph
@@ -107,6 +109,54 @@ void KernelMaps::print_label_map (std::map<int, int>lmap) {
     logstream(LOG_INFO) << "Printing label map..." << std::endl;
     for (map_itr = lmap.begin(); map_itr != lmap.end(); map_itr++)
         logstream(LOG_INFO) << map_itr->first << ":" << map_itr->second << std::endl;
+}
+
+int KernelMaps::calculate_kernel(std::map<int, int>& map1, std::map<int, int>& map2) {
+    int sum = 0;
+    int arr_size = 0;
+    int map1_size = map1.rbegin()->first;
+    int map2_size = map2.rbegin()->first;
+    if (map1_size >= map2_size)
+        arr_size = map1_size;
+    else
+        arr_size = map2_size;
+    int map1_arr[arr_size];
+    int map2_arr[arr_size];
+    map_itr_1 = map1.begin();
+    map_itr_2 = map2.begin();
+    for (int i = 0; i < arr_size; i++) {
+        if (map_itr_1 != map1.end()) {
+            if (map_itr_1->first == i) {
+                map1_arr[i] = map_itr_1->second;
+                map_itr_1++;
+            } else map1_arr[i] = 0;
+        } else {
+            map1_arr[i] = 0;
+        }
+        if (map_itr_2 != map2.end()) {
+            if (map_itr_2->first == i) {
+                map2_arr[i] = map_itr_2->second;
+                map_itr_2++;
+            } else map2_arr[i] = 0;
+        } else {
+            map2_arr[i] = 0;
+        }
+        sum += map1_arr[i] * map2_arr[i];
+    }
+    //For debug only:
+    //*******************
+    std::cout << "Array1: ";
+    for (int i = 0; i < arr_size; i++) {
+        std::cout << map1_arr[i] << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "Array2: ";
+    for (int i = 0; i < arr_size; i++) {
+        std::cout << map2_arr[i] << " ";
+    }
+    std::cout << std::endl;
+    //********************
+    return sum;
 }
 
 
@@ -578,6 +628,9 @@ int main(int argc, const char ** argv) {
     km.print_relabel_map();
     km.print_label_map(km.label_map);
     km.print_label_map(km.label_map_2);
+    
+    //print kernel value of two graphs:
+    logstream(LOG_INFO) << "WL Kernel value is: " << km.calculate_kernel(km.label_map, km.label_map_2) << std::endl;
     
     /* Report execution metrics */
     //metrics_report(m);
