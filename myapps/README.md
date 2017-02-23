@@ -20,6 +20,6 @@ Just run `make` to build.
 
 The usage is:
 
-`./jsonparser _input_file_path_ _output_file_path_`
+`./jsonparser` _`input_file_path`_ _`output_file_path`_
 
 Note that each line in `input_file_path` should be a `JSON` object.
