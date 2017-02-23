@@ -1,4 +1,6 @@
-###Make vertexlabel_static application by running the following command:
+### How to run vertexlabel_static: 
+
+Make vertexlabel_static application by running the following command:
 
 At `graph-chi` directory, run:
 
