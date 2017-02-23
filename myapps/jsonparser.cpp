@@ -206,24 +206,46 @@ int main (int argc, const char ** argv) {
                     int src_type = myMaps.vertex_id_type_map[src_id];
                     int dst_type = myMaps.vertex_id_type_map[dst_id];
                     
-                    std::string src_id_str_format;
-                    std::string dst_id_str_format;
+                    //**********For debugging purposes
+                    //std::cout << "Iterating through Used:" << std::endl;
+                    std::map<std::string, int>::iterator itf;
+                    std::map<int, int>::iterator itf2;
+                    itf = myMaps.vertex_map.find(src_vertex_id_string);
+                    if (itf == myMaps.vertex_map.end()) {
+                        std::cout << src_vertex_id_string << " (source) is not found in the vertex_map. " << std::endl;
+                    }
+                    itf = myMaps.vertex_map.find(dst_vertex_id_string);
+                    if (itf == myMaps.vertex_map.end()) {
+                        std::cout << dst_vertex_id_string << " (destination) is not found in the vertex_map. " << std::endl;
+                    }
+                    itf2 = myMaps.vertex_id_type_map.find(src_id);
+                    if (itf2 == myMaps.vertex_id_type_map.end()) {
+                        std::cout << src_id << " (source) is not found in the vertex_id_type_map. " << std::endl;
+                    }
+                    itf2 = myMaps.vertex_id_type_map.find(dst_id);
+                    if (itf2 == myMaps.vertex_id_type_map.end()) {
+                        std::cout << dst_id << " (destination) is not found in the vertex_id_type_map. " << std::endl;
+                    }
+                    //********************************
+                    
+                    std::string src_type_str_format;
+                    std::string dst_type_str_format;
                     std::string edge_type_str_format;
                     std::ostringstream convert_src;
                     std::ostringstream convert_dst;
                     std::ostringstream convert_edge;
-                    convert_src << src_id;
-                    convert_dst << dst_id;
+                    convert_src << src_type;
+                    convert_dst << dst_type;
                     convert_edge << edge_type_int;
-                    src_id_str_format = convert_src.str();
-                    dst_id_str_format = convert_dst.str();
+                    src_type_str_format = convert_src.str();
+                    dst_type_str_format = convert_dst.str();
                     edge_type_str_format = convert_edge.str();
                     
                     
                     std::string types_str = "";
-                    types_str += src_id_str_format;
+                    types_str += src_type_str_format;
                     types_str += ":";
-                    types_str += dst_id_str_format;
+                    types_str += dst_type_str_format;
                     types_str += ":";
                     types_str += edge_type_str_format;
                     edgelistFile << src_id << "\t" << dst_id << "\t" << types_str << std::endl;
@@ -242,24 +264,46 @@ int main (int argc, const char ** argv) {
                     int src_type = myMaps.vertex_id_type_map[src_id];
                     int dst_type = myMaps.vertex_id_type_map[dst_id];
                     
-                    std::string src_id_str_format;
-                    std::string dst_id_str_format;
+                    //**********For debugging purposes
+                    //std::cout << "Iterating through wasGeneratedBy:" << std::endl;
+                    std::map<std::string, int>::iterator itf;
+                    std::map<int, int>::iterator itf2;
+                    itf = myMaps.vertex_map.find(src_vertex_id_string);
+                    if (itf == myMaps.vertex_map.end()) {
+                        std::cout << src_vertex_id_string << " (source) is not found in the vertex_map. " << std::endl;
+                    }
+                    itf = myMaps.vertex_map.find(dst_vertex_id_string);
+                    if (itf == myMaps.vertex_map.end()) {
+                        std::cout << dst_vertex_id_string << " (destination) is not found in the vertex_map. " << std::endl;
+                    }
+                    itf2 = myMaps.vertex_id_type_map.find(src_id);
+                    if (itf2 == myMaps.vertex_id_type_map.end()) {
+                        std::cout << src_id << " (source) is not found in the vertex_id_type_map. " << std::endl;
+                    }
+                    itf2 = myMaps.vertex_id_type_map.find(dst_id);
+                    if (itf2 == myMaps.vertex_id_type_map.end()) {
+                        std::cout << dst_id << " (destination) is not found in the vertex_id_type_map. " << std::endl;
+                    }
+                    //********************************
+                    
+                    std::string src_type_str_format;
+                    std::string dst_type_str_format;
                     std::string edge_type_str_format;
                     std::ostringstream convert_src;
                     std::ostringstream convert_dst;
                     std::ostringstream convert_edge;
-                    convert_src << src_id;
-                    convert_dst << dst_id;
+                    convert_src << src_type;
+                    convert_dst << dst_type;
                     convert_edge << edge_type_int;
-                    src_id_str_format = convert_src.str();
-                    dst_id_str_format = convert_dst.str();
+                    src_type_str_format = convert_src.str();
+                    dst_type_str_format = convert_dst.str();
                     edge_type_str_format = convert_edge.str();
                     
                     
                     std::string types_str = "";
-                    types_str += src_id_str_format;
+                    types_str += src_type_str_format;
                     types_str += ":";
-                    types_str += dst_id_str_format;
+                    types_str += dst_type_str_format;
                     types_str += ":";
                     types_str += edge_type_str_format;
                     edgelistFile << src_id << "\t" << dst_id << "\t" << types_str << std::endl;
@@ -278,24 +322,46 @@ int main (int argc, const char ** argv) {
                     int src_type = myMaps.vertex_id_type_map[src_id];
                     int dst_type = myMaps.vertex_id_type_map[dst_id];
                     
-                    std::string src_id_str_format;
-                    std::string dst_id_str_format;
+                    //**********For debugging purposes
+                    //std::cout << "Iterating through wasInformedBy:" << std::endl;
+                    std::map<std::string, int>::iterator itf;
+                    std::map<int, int>::iterator itf2;
+                    itf = myMaps.vertex_map.find(src_vertex_id_string);
+                    if (itf == myMaps.vertex_map.end()) {
+                        std::cout << src_vertex_id_string << " (source) is not found in the vertex_map. " << std::endl;
+                    }
+                    itf = myMaps.vertex_map.find(dst_vertex_id_string);
+                    if (itf == myMaps.vertex_map.end()) {
+                        std::cout << dst_vertex_id_string << " (destination) is not found in the vertex_map. " << std::endl;
+                    }
+                    itf2 = myMaps.vertex_id_type_map.find(src_id);
+                    if (itf2 == myMaps.vertex_id_type_map.end()) {
+                        std::cout << src_id << " (source) is not found in the vertex_id_type_map. " << std::endl;
+                    }
+                    itf2 = myMaps.vertex_id_type_map.find(dst_id);
+                    if (itf2 == myMaps.vertex_id_type_map.end()) {
+                        std::cout << dst_id << " (destination) is not found in the vertex_id_type_map. " << std::endl;
+                    }
+                    //********************************
+                    
+                    std::string src_type_str_format;
+                    std::string dst_type_str_format;
                     std::string edge_type_str_format;
                     std::ostringstream convert_src;
                     std::ostringstream convert_dst;
                     std::ostringstream convert_edge;
-                    convert_src << src_id;
-                    convert_dst << dst_id;
+                    convert_src << src_type;
+                    convert_dst << dst_type;
                     convert_edge << edge_type_int;
-                    src_id_str_format = convert_src.str();
-                    dst_id_str_format = convert_dst.str();
+                    src_type_str_format = convert_src.str();
+                    dst_type_str_format = convert_dst.str();
                     edge_type_str_format = convert_edge.str();
                     
                     
                     std::string types_str = "";
-                    types_str += src_id_str_format;
+                    types_str += src_type_str_format;
                     types_str += ":";
-                    types_str += dst_id_str_format;
+                    types_str += dst_type_str_format;
                     types_str += ":";
                     types_str += edge_type_str_format;
                     edgelistFile << src_id << "\t" << dst_id << "\t" << types_str << std::endl;
@@ -314,28 +380,49 @@ int main (int argc, const char ** argv) {
                     int src_type = myMaps.vertex_id_type_map[src_id];
                     int dst_type = myMaps.vertex_id_type_map[dst_id];
                     
-                    std::string src_id_str_format;
-                    std::string dst_id_str_format;
+                    //**********For debugging purposes
+                    //std::cout << "Iterating through wasDerivedFrom:" << std::endl;
+                    std::map<std::string, int>::iterator itf;
+                    std::map<int, int>::iterator itf2;
+                    itf = myMaps.vertex_map.find(src_vertex_id_string);
+                    if (itf == myMaps.vertex_map.end()) {
+                        std::cout << src_vertex_id_string << " (source) is not found in the vertex_map. " << std::endl;
+                    }
+                    itf = myMaps.vertex_map.find(dst_vertex_id_string);
+                    if (itf == myMaps.vertex_map.end()) {
+                        std::cout << dst_vertex_id_string << " (destination) is not found in the vertex_map. " << std::endl;
+                    }
+                    itf2 = myMaps.vertex_id_type_map.find(src_id);
+                    if (itf2 == myMaps.vertex_id_type_map.end()) {
+                        std::cout << src_id << " (source) is not found in the vertex_id_type_map. " << std::endl;
+                    }
+                    itf2 = myMaps.vertex_id_type_map.find(dst_id);
+                    if (itf2 == myMaps.vertex_id_type_map.end()) {
+                        std::cout << dst_id << " (destination) is not found in the vertex_id_type_map. " << std::endl;
+                    }
+                    //********************************
+        
+                    std::string src_type_str_format;
+                    std::string dst_type_str_format;
                     std::string edge_type_str_format;
                     std::ostringstream convert_src;
                     std::ostringstream convert_dst;
                     std::ostringstream convert_edge;
-                    convert_src << src_id;
-                    convert_dst << dst_id;
+                    convert_src << src_type;
+                    convert_dst << dst_type;
                     convert_edge << edge_type_int;
-                    src_id_str_format = convert_src.str();
-                    dst_id_str_format = convert_dst.str();
+                    src_type_str_format = convert_src.str();
+                    dst_type_str_format = convert_dst.str();
                     edge_type_str_format = convert_edge.str();
                     
                     
                     std::string types_str = "";
-                    types_str += src_id_str_format;
+                    types_str += src_type_str_format;
                     types_str += ":";
-                    types_str += dst_id_str_format;
+                    types_str += dst_type_str_format;
                     types_str += ":";
                     types_str += edge_type_str_format;
-                    edgelistFile << src_id << "\t" << dst_id << "\t" << types_str << std::endl;
-                }
+                    edgelistFile << src_id << "\t" << dst_id << "\t" << types_str << std::endl;                }
             }
         }
         provFile.close();
