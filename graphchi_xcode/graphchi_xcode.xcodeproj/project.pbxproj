@@ -176,6 +176,8 @@
 		4CF84F1A1E55598B0086CF6C /* md5.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = md5.cpp; path = ../camflow/md5.cpp; sourceTree = "<group>"; };
 		4CF84F1B1E55598B0086CF6C /* md5.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = md5.hpp; path = ../camflow/md5.hpp; sourceTree = "<group>"; };
 		4CF84F1C1E5B4B160086CF6C /* vertexlabel_static.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = vertexlabel_static.cpp; path = ../myapps/vertexlabel_static.cpp; sourceTree = "<group>"; };
+		4CF84F1D1E5E6D370086CF6C /* jsonparser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = jsonparser.cpp; path = ../myapps/jsonparser.cpp; sourceTree = "<group>"; };
+		4CF84F1E1E5E6D370086CF6C /* jsonparser.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = jsonparser.hpp; path = ../myapps/jsonparser.hpp; sourceTree = "<group>"; };
 		5F0A1FBC16A9FBA50066FB56 /* randomwalks.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = randomwalks.cpp; sourceTree = "<group>"; };
 		5F0A1FCD16AB3E4E0066FB56 /* test_dynamicedata_loader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_dynamicedata_loader.cpp; sourceTree = "<group>"; };
 		5F10BC8E159FA36F00694F2E /* basic_dynamicengine_smoketest.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = basic_dynamicengine_smoketest.cpp; sourceTree = "<group>"; };
@@ -570,6 +572,8 @@
 			children = (
 				4CF84F191E5540210086CF6C /* vertexrelabel.cpp */,
 				4CF84F1C1E5B4B160086CF6C /* vertexlabel_static.cpp */,
+				4CF84F1D1E5E6D370086CF6C /* jsonparser.cpp */,
+				4CF84F1E1E5E6D370086CF6C /* jsonparser.hpp */,
 				4CF84F1A1E55598B0086CF6C /* md5.cpp */,
 				4CF84F1B1E55598B0086CF6C /* md5.hpp */,
 				5FCC1EBC1599F59A0003D0E9 /* example_apps */,
