@@ -15,6 +15,9 @@
 #include <cassert>
 #include <string>
 #include <sstream>
+#include <stdlib.h>
+#include <cstdlib>
+
 
 class Maps {
 public:
@@ -123,15 +126,22 @@ bool Maps::insert_id_type(std::map<int, int>& map, int id, int type) {
 
 
 int main (int argc, const char ** argv) {
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " <input_json_file_path> " << " <output_edgelist_file_path> " << std::endl;
+        assert(argc == 3);
+    }
+    
     std::cout << "JSON parser use jsoncpp..." << std::endl;
+    std::string input_filename = argv[1];
+    std::string output_filename = argv[2];
     
     int counter = 0;//To create unique integer ids for vertices
     
     Maps myMaps;
     
     std::string provData;
-    std::ifstream provFile("../../dataset/prov1.txt");
-    std::ofstream edgelistFile("../../dataset/prov1_edgelist.txt");
+    std::ifstream provFile(input_filename);
+    std::ofstream edgelistFile(output_filename);
     if (!edgelistFile.is_open()) {
         std::cerr << "Opening file to write failed..." <<std::endl;
         assert(edgelistFile.is_open() == true);
@@ -183,7 +193,7 @@ int main (int argc, const char ** argv) {
         assert(provFile.is_open() == true);
     }
     //read the file again to create edgelist file
-    provFile.open("../../dataset/prov1.txt");
+    provFile.open(input_filename);
     if (provFile.is_open()) {
         while (getline(provFile, provData)) {
             Json::Value sroot;//the root of the JSON object; In PROV-JSON, it contains: prefix, activity, entity, used, wasGeneratedBy, wasInformedBy, wasDerivedFrom
