@@ -122,8 +122,8 @@ int KernelMaps::calculate_kernel(std::map<int, int>& map1, std::map<int, int>& m
         arr_size = map2_size;
     int map1_arr[arr_size];
     int map2_arr[arr_size];
-    map_itr_1 = map1.begin();
-    map_itr_2 = map2.begin();
+    std::map<int, int>::iterator map_itr_1 = map1.begin();
+    std::map<int, int>::iterator map_itr_2 = map2.begin();
     for (int i = 0; i < arr_size; i++) {
         if (map_itr_1 != map1.end()) {
             if (map_itr_1->first == i) {
@@ -189,6 +189,11 @@ void parse(type_label &x, const char * s) {
 
 //global kernelmaps instance
 KernelMaps km(0);
+
+//global version macro
+//0: each vertex takes both incoming and outgoing neighboring vertices' labels, sorts them, and combines with its own label to relabel. No direction or edge labels considered
+//1: each vertex takes its incoming neighboring vertices' labels, sorts them, and combines with its own label to relabel. Then it takes its outgoing neighboring vertices' labels, sorts them, and combines with its own label to relabel. Then it uses these two labels, sorts them and then relabels. No edge labels considered
+#define VERSION 1
 
 /**
  * GraphChi programs need to subclass GraphChiProgram<vertex-type, edge-type>
@@ -306,47 +311,131 @@ struct VertexRelabel : public GraphChiProgram<VertexDataType, EdgeDataType> {
                     assert (vertex_label != "");
                 }
             } else {
-                std::vector<int> label_vec;
-                for(int i=0; i < vertex.num_inedges(); i++) {
-                    graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
-                    int int_in_type = in_edge->get_data().old_src;
-                    label_vec.push_back(int_in_type);
-                    logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
-                }
-                for (int i=0; i < vertex.num_outedges(); i++) {
-                    graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
-                    int int_out_type = out_edge->get_data().old_dst;
-                    label_vec.push_back(int_out_type);
-                    logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
-                }
-                std::sort(label_vec.begin(), label_vec.end());
-                int self_label = vertex.get_data();
-                label_vec.push_back(self_label);
-                
-                std::string new_label = "";
-                std::string first_num_string;
-                std::stringstream first_out;
-                first_out << *(label_vec.end() - 1);
-                first_num_string = first_out.str();
-                new_label += first_num_string;
-                new_label += ",";
+                if (VERSION == 0) {
+                    std::vector<int> label_vec;
+                    for(int i=0; i < vertex.num_inedges(); i++) {
+                        graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
+                        int int_in_type = in_edge->get_data().old_src;
+                        label_vec.push_back(int_in_type);
+                        logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
+                    }
+                    for (int i=0; i < vertex.num_outedges(); i++) {
+                        graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
+                        int int_out_type = out_edge->get_data().old_dst;
+                        label_vec.push_back(int_out_type);
+                        logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
+                    }
+                    std::sort(label_vec.begin(), label_vec.end());
+                    int self_label = vertex.get_data();
+                    label_vec.push_back(self_label);
+                    
+                    std::string new_label = "";
+                    std::string first_num_string;
+                    std::stringstream first_out;
+                    first_out << *(label_vec.end() - 1);
+                    first_num_string = first_out.str();
+                    new_label += first_num_string;
+                    new_label += ",";
 
-                for (std::vector<int>::iterator it = label_vec.begin(); it != label_vec.end() - 1; ++it) {
-                    std::string num_string;
-                    std::stringstream out;
-                    out << *it;
-                    num_string = out.str();
-                    new_label += num_string + " ";
+                    for (std::vector<int>::iterator it = label_vec.begin(); it != label_vec.end() - 1; ++it) {
+                        std::string num_string;
+                        std::stringstream out;
+                        out << *it;
+                        num_string = out.str();
+                        new_label += num_string + " ";
+                    }
+                    
+                    relabel_map_lock.lock();
+                    int label_map_label = km.insert_relabel(new_label);
+                    relabel_map_lock.unlock();
+                    label_map_lock.lock();
+                    km.insert_label(km.label_map, label_map_label);
+                    label_map_lock.unlock();
+                    vertex.set_data(label_map_label);
+                    logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label << std::endl;
                 }
-                
-                relabel_map_lock.lock();
-                int label_map_label = km.insert_relabel(new_label);
-                relabel_map_lock.unlock();
-                label_map_lock.lock();
-                km.insert_label(km.label_map, label_map_label);
-                label_map_lock.unlock();
-                vertex.set_data(label_map_label);
-                logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label << std::endl;
+                if (VERSION == 1) {
+                    std::vector<int> incoming_label_vec;
+                    std::vector<int> outgoing_label_vec;
+                    for(int i=0; i < vertex.num_inedges(); i++) {
+                        graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
+                        int int_in_type = in_edge->get_data().old_src;
+                        incoming_label_vec.push_back(int_in_type);
+                        logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
+                    }
+                    for (int i=0; i < vertex.num_outedges(); i++) {
+                        graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
+                        int int_out_type = out_edge->get_data().old_dst;
+                        outgoing_label_vec.push_back(int_out_type);
+                        logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
+                    }
+                    std::sort(incoming_label_vec.begin(), incoming_label_vec.end());
+                    std::sort(outgoing_label_vec.begin(), outgoing_label_vec.end());
+                    
+                    int self_label = vertex.get_data();
+                    incoming_label_vec.push_back(self_label);
+                    outgoing_label_vec.push_back(self_label);
+                    
+                    std::string new_incoming_label = "";
+                    std::string first_incoming_num_string;
+                    std::stringstream first_incoming_out;
+                    first_incoming_out << *(incoming_label_vec.end() - 1);
+                    first_incoming_num_string = first_incoming_out.str();
+                    new_incoming_label += first_incoming_num_string;
+                    new_incoming_label += ",";
+                    
+                    for (std::vector<int>::iterator it = incoming_label_vec.begin(); it != incoming_label_vec.end() - 1; ++it) {
+                        std::string incoming_num_string;
+                        std::stringstream incoming_out;
+                        incoming_out << *it;
+                        incoming_num_string = incoming_out.str();
+                        new_incoming_label += incoming_num_string + " ";
+                    }
+                    
+                    std::string new_outgoing_label = "";
+                    std::string first_outgoing_num_string;
+                    std::stringstream first_outgoing_out;
+                    first_outgoing_out << *(outgoing_label_vec.end() - 1);
+                    first_outgoing_num_string = first_outgoing_out.str();
+                    new_outgoing_label += first_outgoing_num_string;
+                    new_outgoing_label += ",";
+                    
+                    for (std::vector<int>::iterator it = outgoing_label_vec.begin(); it != outgoing_label_vec.end() - 1; ++it) {
+                        std::string outgoing_num_string;
+                        std::stringstream outgoing_out;
+                        outgoing_out << *it;
+                        outgoing_num_string = outgoing_out.str();
+                        new_outgoing_label += outgoing_num_string + " ";
+                    }
+                    
+                    relabel_map_lock.lock();
+                    int label_map_label_incoming = km.insert_relabel(new_incoming_label);
+                    int label_map_label_outgoing = km.insert_relabel(new_outgoing_label);
+                    relabel_map_lock.unlock();
+                    
+                    std::string new_combined_label = ""; //label_map_label_incoming,label_map_label_outgoing
+                    std::string incoming_label_in_combined;
+                    std::stringstream incoming_label_in_combined_out;
+                    incoming_label_in_combined_out << label_map_label_incoming;
+                    incoming_label_in_combined = incoming_label_in_combined_out.str();
+                    new_combined_label += incoming_label_in_combined;
+                    new_combined_label += ",";
+                    std::string outgoing_label_in_combined;
+                    std::stringstream outgoing_label_in_combined_out;
+                    outgoing_label_in_combined_out << label_map_label_outgoing;
+                    outgoing_label_in_combined = outgoing_label_in_combined_out.str();
+                    new_combined_label += outgoing_label_in_combined;
+                    
+                    relabel_map_lock.lock();
+                    int label_map_label_combined = km.insert_relabel(new_combined_label);
+                    relabel_map_lock.unlock();
+                    
+                    label_map_lock.lock();
+                    km.insert_label(km.label_map, label_map_label_combined);
+                    label_map_lock.unlock();
+                    vertex.set_data(label_map_label_combined);
+                    logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label_combined << std::endl;
+                }
             }
             
             // broadcast new label to neighbors by writing the value to the edges
@@ -482,47 +571,131 @@ struct VertexRelabel2 : public GraphChiProgram<VertexDataType, EdgeDataType> {
                     assert (vertex_label != "");
                 }
             } else {
-                std::vector<int> label_vec;
-                for(int i=0; i < vertex.num_inedges(); i++) {
-                    graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
-                    int int_in_type = in_edge->get_data().old_src;
-                    label_vec.push_back(int_in_type);
-                    logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
+                if (VERSION == 0) {
+                    std::vector<int> label_vec;
+                    for(int i=0; i < vertex.num_inedges(); i++) {
+                        graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
+                        int int_in_type = in_edge->get_data().old_src;
+                        label_vec.push_back(int_in_type);
+                        logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
+                    }
+                    for (int i=0; i < vertex.num_outedges(); i++) {
+                        graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
+                        int int_out_type = out_edge->get_data().old_dst;
+                        label_vec.push_back(int_out_type);
+                        logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
+                    }
+                    std::sort(label_vec.begin(), label_vec.end());
+                    int self_label = vertex.get_data();
+                    label_vec.push_back(self_label);
+                    
+                    std::string new_label = "";
+                    std::string first_num_string;
+                    std::stringstream first_out;
+                    first_out << *(label_vec.end() - 1);
+                    first_num_string = first_out.str();
+                    new_label += first_num_string;
+                    new_label += ",";
+                    
+                    for (std::vector<int>::iterator it = label_vec.begin(); it != label_vec.end() - 1; ++it) {
+                        std::string num_string;
+                        std::stringstream out;
+                        out << *it;
+                        num_string = out.str();
+                        new_label += num_string + " ";
+                    }
+                    
+                    relabel_map_lock.lock();
+                    int label_map_label = km.insert_relabel(new_label);
+                    relabel_map_lock.unlock();
+                    label_map_lock.lock();
+                    km.insert_label(km.label_map_2, label_map_label);
+                    label_map_lock.unlock();
+                    vertex.set_data(label_map_label);
+                    logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label << std::endl;
                 }
-                for (int i=0; i < vertex.num_outedges(); i++) {
-                    graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
-                    int int_out_type = out_edge->get_data().old_dst;
-                    label_vec.push_back(int_out_type);
-                    logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
+                if (VERSION == 1) {
+                    std::vector<int> incoming_label_vec;
+                    std::vector<int> outgoing_label_vec;
+                    for(int i=0; i < vertex.num_inedges(); i++) {
+                        graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
+                        int int_in_type = in_edge->get_data().old_src;
+                        incoming_label_vec.push_back(int_in_type);
+                        logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
+                    }
+                    for (int i=0; i < vertex.num_outedges(); i++) {
+                        graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
+                        int int_out_type = out_edge->get_data().old_dst;
+                        outgoing_label_vec.push_back(int_out_type);
+                        logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
+                    }
+                    std::sort(incoming_label_vec.begin(), incoming_label_vec.end());
+                    std::sort(outgoing_label_vec.begin(), outgoing_label_vec.end());
+                    
+                    int self_label = vertex.get_data();
+                    incoming_label_vec.push_back(self_label);
+                    outgoing_label_vec.push_back(self_label);
+                    
+                    std::string new_incoming_label = "";
+                    std::string first_incoming_num_string;
+                    std::stringstream first_incoming_out;
+                    first_incoming_out << *(incoming_label_vec.end() - 1);
+                    first_incoming_num_string = first_incoming_out.str();
+                    new_incoming_label += first_incoming_num_string;
+                    new_incoming_label += ",";
+                    
+                    for (std::vector<int>::iterator it = incoming_label_vec.begin(); it != incoming_label_vec.end() - 1; ++it) {
+                        std::string incoming_num_string;
+                        std::stringstream incoming_out;
+                        incoming_out << *it;
+                        incoming_num_string = incoming_out.str();
+                        new_incoming_label += incoming_num_string + " ";
+                    }
+                    
+                    std::string new_outgoing_label = "";
+                    std::string first_outgoing_num_string;
+                    std::stringstream first_outgoing_out;
+                    first_outgoing_out << *(outgoing_label_vec.end() - 1);
+                    first_outgoing_num_string = first_outgoing_out.str();
+                    new_outgoing_label += first_outgoing_num_string;
+                    new_outgoing_label += ",";
+                    
+                    for (std::vector<int>::iterator it = outgoing_label_vec.begin(); it != outgoing_label_vec.end() - 1; ++it) {
+                        std::string outgoing_num_string;
+                        std::stringstream outgoing_out;
+                        outgoing_out << *it;
+                        outgoing_num_string = outgoing_out.str();
+                        new_outgoing_label += outgoing_num_string + " ";
+                    }
+                    
+                    relabel_map_lock.lock();
+                    int label_map_label_incoming = km.insert_relabel(new_incoming_label);
+                    int label_map_label_outgoing = km.insert_relabel(new_outgoing_label);
+                    relabel_map_lock.unlock();
+                    
+                    std::string new_combined_label = ""; //label_map_label_incoming,label_map_label_outgoing
+                    std::string incoming_label_in_combined;
+                    std::stringstream incoming_label_in_combined_out;
+                    incoming_label_in_combined_out << label_map_label_incoming;
+                    incoming_label_in_combined = incoming_label_in_combined_out.str();
+                    new_combined_label += incoming_label_in_combined;
+                    new_combined_label += ",";
+                    std::string outgoing_label_in_combined;
+                    std::stringstream outgoing_label_in_combined_out;
+                    outgoing_label_in_combined_out << label_map_label_outgoing;
+                    outgoing_label_in_combined = outgoing_label_in_combined_out.str();
+                    new_combined_label += outgoing_label_in_combined;
+                    
+                    relabel_map_lock.lock();
+                    int label_map_label_combined = km.insert_relabel(new_combined_label);
+                    relabel_map_lock.unlock();
+                    
+                    label_map_lock.lock();
+                    km.insert_label(km.label_map_2, label_map_label_combined);
+                    label_map_lock.unlock();
+                    vertex.set_data(label_map_label_combined);
+                    logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label_combined << std::endl;
                 }
-                std::sort(label_vec.begin(), label_vec.end());
-                int self_label = vertex.get_data();
-                label_vec.push_back(self_label);
-                
-                std::string new_label = "";
-                std::string first_num_string;
-                std::stringstream first_out;
-                first_out << *(label_vec.end() - 1);
-                first_num_string = first_out.str();
-                new_label += first_num_string;
-                new_label += ",";
-                
-                for (std::vector<int>::iterator it = label_vec.begin(); it != label_vec.end() - 1; ++it) {
-                    std::string num_string;
-                    std::stringstream out;
-                    out << *it;
-                    num_string = out.str();
-                    new_label += num_string + " ";
-                }
-                
-                relabel_map_lock.lock();
-                int label_map_label = km.insert_relabel(new_label);
-                relabel_map_lock.unlock();
-                label_map_lock.lock();
-                km.insert_label(km.label_map_2, label_map_label);
-                label_map_lock.unlock();
-                vertex.set_data(label_map_label);
-                logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label << std::endl;
             }
             
             // broadcast new label to neighbors by writing the value to the edges
