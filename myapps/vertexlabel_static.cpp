@@ -194,6 +194,7 @@ KernelMaps km(0);
 //0: each vertex takes both incoming and outgoing neighboring vertices' labels, sorts them, and combines with its own label to relabel. No direction or edge labels considered
 //1: each vertex takes its incoming neighboring vertices' labels, sorts them, and combines with its own label to relabel. Then it takes its outgoing neighboring vertices' labels, sorts them, and combines with its own label to relabel. Then it uses these two labels, sorts them and then relabels. No edge labels considered
 #define VERSION 1
+#define TAKEEDGELABEL 1
 
 /**
  * GraphChi programs need to subclass GraphChiProgram<vertex-type, edge-type>
@@ -318,12 +319,22 @@ struct VertexRelabel : public GraphChiProgram<VertexDataType, EdgeDataType> {
                         int int_in_type = in_edge->get_data().old_src;
                         label_vec.push_back(int_in_type);
                         logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
+                        if (TAKEEDGELABEL == 1 && gcontext.iteration == 2) {
+                            int int_in_edge_type = in_edge->get_data().edge;
+                            label_vec.push_back(int_in_edge_type);
+                            logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_edge_type << " (edge type) from in edges" << std::endl;
+                        }
                     }
                     for (int i=0; i < vertex.num_outedges(); i++) {
                         graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
                         int int_out_type = out_edge->get_data().old_dst;
                         label_vec.push_back(int_out_type);
                         logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
+                        if (TAKEEDGELABEL == 1 && gcontext.iteration == 2) {
+                            int int_out_edge_type = out_edge->get_data().edge;
+                            label_vec.push_back(int_out_edge_type);
+                            logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_edge_type << " (edge type) from in edges" << std::endl;
+                        }
                     }
                     std::sort(label_vec.begin(), label_vec.end());
                     int self_label = vertex.get_data();
@@ -362,12 +373,22 @@ struct VertexRelabel : public GraphChiProgram<VertexDataType, EdgeDataType> {
                         int int_in_type = in_edge->get_data().old_src;
                         incoming_label_vec.push_back(int_in_type);
                         logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
+                        if (TAKEEDGELABEL == 1 && gcontext.iteration == 2) {
+                            int int_in_edge_type = in_edge->get_data().edge;
+                            incoming_label_vec.push_back(int_in_edge_type);
+                            logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_edge_type << " (edge type) from in edges" << std::endl;
+                        }
                     }
                     for (int i=0; i < vertex.num_outedges(); i++) {
                         graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
                         int int_out_type = out_edge->get_data().old_dst;
                         outgoing_label_vec.push_back(int_out_type);
                         logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
+                        if (TAKEEDGELABEL == 1 && gcontext.iteration == 2) {
+                            int int_out_edge_type = out_edge->get_data().edge;
+                            outgoing_label_vec.push_back(int_out_edge_type);
+                            logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_edge_type << " (edge type) from in edges" << std::endl;
+                        }
                     }
                     std::sort(incoming_label_vec.begin(), incoming_label_vec.end());
                     std::sort(outgoing_label_vec.begin(), outgoing_label_vec.end());
@@ -578,12 +599,22 @@ struct VertexRelabel2 : public GraphChiProgram<VertexDataType, EdgeDataType> {
                         int int_in_type = in_edge->get_data().old_src;
                         label_vec.push_back(int_in_type);
                         logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
+                        if (TAKEEDGELABEL == 1 && gcontext.iteration == 2) {
+                            int int_in_edge_type = in_edge->get_data().edge;
+                            label_vec.push_back(int_in_edge_type);
+                            logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_edge_type << " (edge type) from in edges" << std::endl;
+                        }
                     }
                     for (int i=0; i < vertex.num_outedges(); i++) {
                         graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
                         int int_out_type = out_edge->get_data().old_dst;
                         label_vec.push_back(int_out_type);
                         logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
+                        if (TAKEEDGELABEL == 1 && gcontext.iteration == 2) {
+                            int int_out_edge_type = out_edge->get_data().edge;
+                            label_vec.push_back(int_out_edge_type);
+                            logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_edge_type << " (edge type) from in edges" << std::endl;
+                        }
                     }
                     std::sort(label_vec.begin(), label_vec.end());
                     int self_label = vertex.get_data();
@@ -622,12 +653,22 @@ struct VertexRelabel2 : public GraphChiProgram<VertexDataType, EdgeDataType> {
                         int int_in_type = in_edge->get_data().old_src;
                         incoming_label_vec.push_back(int_in_type);
                         logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
+                        if (TAKEEDGELABEL == 1 && gcontext.iteration == 2) {
+                            int int_in_edge_type = in_edge->get_data().edge;
+                            incoming_label_vec.push_back(int_in_edge_type);
+                            logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_edge_type << " (edge type) from in edges" << std::endl;
+                        }
                     }
                     for (int i=0; i < vertex.num_outedges(); i++) {
                         graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
                         int int_out_type = out_edge->get_data().old_dst;
                         outgoing_label_vec.push_back(int_out_type);
                         logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
+                        if (TAKEEDGELABEL == 1 && gcontext.iteration == 2) {
+                            int int_out_edge_type = out_edge->get_data().edge;
+                            outgoing_label_vec.push_back(int_out_edge_type);
+                            logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_edge_type << " (edge type) from in edges" << std::endl;
+                        }
                     }
                     std::sort(incoming_label_vec.begin(), incoming_label_vec.end());
                     std::sort(outgoing_label_vec.begin(), outgoing_label_vec.end());
