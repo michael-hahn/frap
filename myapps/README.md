@@ -18,7 +18,9 @@ Currently, three versions available:
 
 * Simple edge-aware (`#define TAKEEDGELABEL 1`): This macro can be set in addition to the previous two versions. When the macro is set to `1`, both version `0` and `1` will gather edge labels during the *_first_* time their neighboring vertex labels are being gathered. That is, edge labels are only gathered once during the first hop of neighbor discovery. Gathering edge labels after the first hop does not make sense, neither does relabeling edge labels. Note that although richer information about the graph is obtained, this is a simplified version since when sorting the labels for relabeling, edge labels and their corresponding vertex labels are not guaranteed physical proximity in the label array. For example, if a vertex labeled `0` has a neighbor node labeled `2` with an edge labeled `7` and another neighbor node labeled `3` with an edge labeled `1`, then we will have generate (assuming `VERSION 0`) the label array `[1, 2, 3, 7]` for relabeling purpose. However, it has more physical meaning if we can have the array `[2, 7, 3, 1]`(which will be implemented in another version). 
 
-Unfortunately, you have to change the macro in the code (`#define VERSION X`), rebuild, and re-run at this point.
+* Edge-aware (`#define VERSION 2`): This is the version that when sorting the array of labels, edge labels follow their corresponding vertex labels. This version treats incoming-edge and outgoing-edge differently (like version `1`).
+
+Unfortunately, you have to change the macro in the code (`#define VERSION X`, `#define TAKEEDGELABEL X`), rebuild, and re-run at this point.
 
 #### Make file in `myapps` directory:
 
