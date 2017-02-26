@@ -8,7 +8,11 @@ At `graph-chi` directory, run:
 
 and then use the following command to run the application:
 
-`bin/myapps/vertexlabel_static file <file_name> file2 <file_name> niters <iteration_time>`
+`bin/myapps/vertexlabel_static ngraphs <num_of_graphs> file0 <file_name> file1 <file_name> ...  niters <iteration_time>`
+
+The application can take arbitrary number of graphs now. After providing the size in `<num_of_graphs>`, be sure to have option starting from `0` (i.e. `file0`), and all the way to the number `file``num_of_graphs - 1`.
+
+The sequence of input files corresponds to the sequence of normalized kernel value of each graph.
 
 Currently, three versions available:
 
@@ -21,6 +25,8 @@ Currently, three versions available:
 * Edge-aware (`#define VERSION 2`): This is the version that when sorting the array of labels, edge labels follow their corresponding vertex labels. This version treats incoming-edge and outgoing-edge differently (like version `1`).
 
 Unfortunately, you have to change the macro in the code (`#define VERSION X`, `#define TAKEEDGELABEL X`), rebuild, and re-run at this point.
+
+_TODO: The application is not optimized. Many algorithm can be changed to make it more efficiently. There are many redundant computations for now. Smaller locks should be used instead as well._
 
 #### Make file in `myapps` directory:
 

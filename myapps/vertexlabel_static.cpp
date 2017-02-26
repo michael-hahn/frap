@@ -22,6 +22,7 @@
 #include <vector>
 #include <sstream>
 #include <cassert>
+#include <cmath>
 #include <algorithm>
 #include "graphchi_basic_includes.hpp"
 #include "logger/logger.hpp"
@@ -48,6 +49,8 @@ class KernelMaps {
 public:
     KernelMaps(int counter);
     ~KernelMaps();
+    void resetMaps(int counter);
+    
     int insert_relabel(std::string label);
     
     //insert int to label_map if it does not exist, or update the mapped value otherwise.
@@ -70,6 +73,13 @@ KernelMaps::KernelMaps(int counter) {
 }
 
 KernelMaps::~KernelMaps() {
+    label_map.clear();
+    relabel_map.clear();
+    label_map_2.clear();
+}
+
+void KernelMaps::resetMaps(int counter) {
+    counter = this->counter;
     label_map.clear();
     relabel_map.clear();
     label_map_2.clear();
@@ -190,6 +200,11 @@ void parse(type_label &x, const char * s) {
 
 //global kernelmaps instance
 KernelMaps km(0);
+
+//global vector that holds the kernel value for each pair of graphs
+//the position of the element in this vector indicates the identity of the value.
+//for three graphs numbered 1, 2, 3, the vector contains: [1-1, 1-2, 1-3, 2-2, 2-3, 3-3].
+std::vector<int> kv;
 
 //global version macro
 //0: each vertex takes both incoming and outgoing neighboring vertices' labels, sorts them, and combines with its own label to relabel. No direction or edge labels considered
@@ -1175,35 +1190,125 @@ int main(int argc, const char ** argv) {
     metrics m("vertexlabel");
     
     /* Basic arguments for application */
-    std::string filename = get_option_string("file");  // Base filename
-    std::string filename2 = get_option_string("file2");
+    //First, we must know how many graphs will be used for computation:
+    int num_graphs = get_option_int("ngraphs");
+    //We then use the for loop to get all the filenames, and store them in an array
+    std::string filenames[num_graphs] = {};
+    for (int i = 0; i < num_graphs; i++) {
+        std::string f_string;
+        std::stringstream f_out;
+        f_out << i;
+        f_string = f_out.str();
+        const std::string name_of_file = "file" + f_string;
+        filenames[i] = get_option_string(name_of_file.c_str());
+    }
+    //*********Hardcode file names with hardcore preset number of files
+    //std::string filename = get_option_string("file");  // Base filename
+    //std::string filename2 = get_option_string("file2");
+    //**************
     int niters           = get_option_int("niters", 10); // Number of iterations
     //bool scheduler       = get_option_int("scheduler", 0); // Whether to use selective scheduling
     //TODO: should I use selective scheduling?
     bool scheduler       = false;
     
     /* Detect the number of shards or preprocess an input to create them */
-    int nshards          = convert_if_notexists<EdgeDataType>(filename,
-                                                             get_option_string("nshards", "auto"));
-    
-    int nshards2         = convert_if_notexists<EdgeDataType>(filename2,
-                                                              get_option_string("nshards", "auto"));
+    //for each file, detect shards or preprocess an input to create them
+    //put results in an array
+    int nshards_arr[num_graphs] = {};
+    for (int i = 0; i < num_graphs; i++) {
+        nshards_arr[i] = convert_if_notexists<EdgeDataType>(filenames[i], get_option_string("nshards", "auto"));
+    }
+    //***************hardcoded with preset number of files
+//    int nshards          = convert_if_notexists<EdgeDataType>(filename,
+//                                                             get_option_string("nshards", "auto"));
+//    
+//    int nshards2         = convert_if_notexists<EdgeDataType>(filename2,
+//                                                              get_option_string("nshards", "auto"));
+    //**********************
     /* Run */
-    VertexRelabel program;
-    graphchi_engine<VertexDataType, EdgeDataType> engine(filename, nshards, scheduler, m);
-    engine.run(program, niters);
+    //TODO:This part can be made more efficient, as the principle graph (those in VertexRelabel) only needs to be run once
+    //modify this code and resetMaps code to streamline
+    for (int i = 0 ; i < num_graphs; i++) {
+        for (int j = 0; j < num_graphs - i; j++) {
+            VertexRelabel program;
+            graphchi_engine<VertexDataType, EdgeDataType> engine(filenames[i], nshards_arr[i], scheduler, m);
+            engine.run(program, niters);
+            
+            VertexRelabel2 program2;
+            graphchi_engine<VertexDataType, EdgeDataType> engine2(filenames[i+j], nshards_arr[i+j], scheduler, m);
+            engine2.run(program2, niters);
+            
+            //calculate the kernel value between two graphs
+            int k_value = km.calculate_kernel(km.label_map, km.label_map_2);
+            //reset the global map for next iteration
+            km.resetMaps(0);
+            //push the kernel value into the global kv vector
+            kv.push_back(k_value);
+            //print kernel value of two graphs:
+            logstream(LOG_INFO) << "WL Kernel value is: " << k_value << std::endl;
+        }
+    }
+    //print kv
+    std::cout << "Kernel vector values: ";
+    for(size_t i = 0; i < kv.size() - 1; i++) {
+        std::cout << kv[i] << " ";
+    }
+    std::cout << std::endl;
     
-    VertexRelabel2 program2;
-    graphchi_engine<VertexDataType, EdgeDataType> engine2(filename2, nshards2, scheduler, m);
-    engine2.run(program2, niters);
+    //produce normalized kernel value for each graph
+    double normalized_kv[num_graphs] = {};
+    for (int i = 0; i < num_graphs; i++) {
+        double total = 0.0;
+        for (int j = 0; j < num_graphs; j++) {
+            if (i != j) {
+                int self = kv[i*num_graphs-i*(i-1)/2+j-i];
+                int base1 = kv[i*num_graphs-i*(i-1)/2+i-i];
+                int base2 = kv[j*num_graphs-j*(j-1)/2+j-j];
+                double normalized = (double) self/((double)base1*(double)base2);
+                total += normalized;
+            }
+        }
+        normalized_kv[i] = total/num_graphs;
+    }
+    //print normalize_kv
+    std::cout << "Normalized kernel vector values: ";
+    for(int i = 0; i < num_graphs; i++) {
+        std::cout << normalized_kv[i] << " ";
+    }
+    std::cout << std::endl;
     
-    //Print maps
-    km.print_relabel_map();
-    km.print_label_map(km.label_map);
-    km.print_label_map(km.label_map_2);
+    //calculate mean and std of normalized_kv
+    double sum = 0.0, mean, standardDeviation = 0.0;
+    int i;
+    for(i = 0; i < num_graphs; ++i){
+        sum += normalized_kv[i];
+    }
+    mean = sum/num_graphs;
+    for(i = 0; i < num_graphs; ++i)
+        standardDeviation += pow(normalized_kv[i] - mean, 2);
+    standardDeviation = sqrt(standardDeviation / num_graphs);
+    std::cout << "Mean: " << mean << std::endl;
+    std::cout << "STD: " << standardDeviation << std::endl;
     
-    //print kernel value of two graphs:
-    logstream(LOG_INFO) << "WL Kernel value is: " << km.calculate_kernel(km.label_map, km.label_map_2) << std::endl;
+    //**********Hardcoded for two graphs only
+//    VertexRelabel program;
+//    graphchi_engine<VertexDataType, EdgeDataType> engine(filename, nshards, scheduler, m);
+//    engine.run(program, niters);
+//    
+//    VertexRelabel2 program2;
+//    graphchi_engine<VertexDataType, EdgeDataType> engine2(filename2, nshards2, scheduler, m);
+//    engine2.run(program2, niters);
+//    
+//    //Print maps
+//    km.print_relabel_map();
+//    km.print_label_map(km.label_map);
+//    km.print_label_map(km.label_map_2);
+//    
+//    //calculate the kernel value between two graphs
+//    int k_value = km.calculate_kernel(km.label_map, km.label_map_2);
+//    //print kernel value of two graphs:
+//    logstream(LOG_INFO) << "WL Kernel value is: " << k_value << std::endl;
+    //*******************************
     
     /* Report execution metrics */
     //metrics_report(m);
