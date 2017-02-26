@@ -26,7 +26,7 @@ Currently, three versions available:
 
 Unfortunately, you have to change the macro in the code (`#define VERSION X`, `#define TAKEEDGELABEL X`), rebuild, and re-run at this point.
 
-_TODO: The application is not optimized. Many algorithm can be changed to make it more efficiently. There are many redundant computations for now. Smaller locks should be used instead as well._
+_TODO: The application is not optimized. Many algorithms can be changed to make it more efficient. There are many redundant computations for now. Smaller locks should be used instead as well._
 
 #### Make file in `myapps` directory:
 
