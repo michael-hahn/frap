@@ -152,7 +152,10 @@ int KernelMaps::calculate_kernel(std::map<int, int>& map1, std::map<int, int>& m
         } else {
             map2_arr[i] = 0;
         }
+        //Sum of multiplication
         sum += map1_arr[i] * map2_arr[i];
+        //geometric distance
+        //sum += (map1_arr[i] - map2_arr[i]) * (map1_arr[i] * map2_arr[i]);
     }
     //For debug only:
     //*******************
@@ -167,7 +170,7 @@ int KernelMaps::calculate_kernel(std::map<int, int>& map1, std::map<int, int>& m
     }
     std::cout << std::endl;
     //********************
-    return sum;
+    return sqrt(sum);
 }
 
 
@@ -1256,6 +1259,7 @@ int main(int argc, const char ** argv) {
     std::cout << std::endl;
     
     //produce normalized kernel value for each graph
+    //sum of multiplication
     double normalized_kv[num_graphs] = {};
     for (int i = 0; i < num_graphs; i++) {
         double total = 0.0;
@@ -1270,6 +1274,19 @@ int main(int argc, const char ** argv) {
         }
         normalized_kv[i] = total/num_graphs;
     }
+    //geometric distance
+//    double normalized_kv[num_graphs] = {};
+//    for (int i = 0; i < num_graphs; i++) {
+//        double total = 0.0;
+//        for (int j = 0; j < num_graphs; j++) {
+//            if (i != j) {
+//                int dist = kv[i*num_graphs-i*(i-1)/2+j-i];
+//                total += dist;
+//            }
+//        }
+//        normalized_kv[i] = total/(num_graphs - 1);
+//    }
+    
     //print normalize_kv
     std::cout << "Normalized kernel vector values: ";
     for(int i = 0; i < num_graphs; i++) {
