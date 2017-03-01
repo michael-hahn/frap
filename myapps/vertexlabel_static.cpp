@@ -81,7 +81,7 @@ KernelMaps::~KernelMaps() {
 void KernelMaps::resetMaps(int counter) {
     counter = this->counter;
     label_map.clear();
-    relabel_map.clear();
+    //relabel_map.clear();//Bug here: this map should not be reset at all.
     label_map_2.clear();
 }
 
