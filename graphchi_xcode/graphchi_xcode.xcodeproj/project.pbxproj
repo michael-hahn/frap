@@ -178,6 +178,14 @@
 		4CF84F1C1E5B4B160086CF6C /* vertexlabel_static.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = vertexlabel_static.cpp; path = ../myapps/vertexlabel_static.cpp; sourceTree = "<group>"; };
 		4CF84F1D1E5E6D370086CF6C /* jsonparser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = jsonparser.cpp; path = ../myapps/jsonparser.cpp; sourceTree = "<group>"; };
 		4CF84F1E1E5E6D370086CF6C /* jsonparser.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = jsonparser.hpp; path = ../myapps/jsonparser.hpp; sourceTree = "<group>"; };
+		4CF84F1F1E6879AE0086CF6C /* vertex.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = vertex.cpp; path = ../myapps/vertex.cpp; sourceTree = "<group>"; };
+		4CF84F201E6879AE0086CF6C /* vertex.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = vertex.hpp; path = ../myapps/vertex.hpp; sourceTree = "<group>"; };
+		4CF84F211E687A850086CF6C /* kernelmaps.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kernelmaps.cpp; path = ../myapps/kernelmaps.cpp; sourceTree = "<group>"; };
+		4CF84F221E687A850086CF6C /* kernelmaps.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = kernelmaps.hpp; path = ../myapps/kernelmaps.hpp; sourceTree = "<group>"; };
+		4CF84F231E6880D90086CF6C /* profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = profile.cpp; path = ../myapps/profile.cpp; sourceTree = "<group>"; };
+		4CF84F241E6880D90086CF6C /* profile.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = profile.hpp; path = ../myapps/profile.hpp; sourceTree = "<group>"; };
+		4CF84F251E68A34A0086CF6C /* global.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = global.h; path = ../myapps/global.h; sourceTree = "<group>"; };
+		4CF84F261E68A4A70086CF6C /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../myapps/main.cpp; sourceTree = "<group>"; };
 		5F0A1FBC16A9FBA50066FB56 /* randomwalks.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = randomwalks.cpp; sourceTree = "<group>"; };
 		5F0A1FCD16AB3E4E0066FB56 /* test_dynamicedata_loader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_dynamicedata_loader.cpp; sourceTree = "<group>"; };
 		5F10BC8E159FA36F00694F2E /* basic_dynamicengine_smoketest.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = basic_dynamicengine_smoketest.cpp; sourceTree = "<group>"; };
@@ -572,6 +580,14 @@
 			children = (
 				4CF84F191E5540210086CF6C /* vertexrelabel.cpp */,
 				4CF84F1C1E5B4B160086CF6C /* vertexlabel_static.cpp */,
+				4CF84F211E687A850086CF6C /* kernelmaps.cpp */,
+				4CF84F261E68A4A70086CF6C /* main.cpp */,
+				4CF84F231E6880D90086CF6C /* profile.cpp */,
+				4CF84F241E6880D90086CF6C /* profile.hpp */,
+				4CF84F221E687A850086CF6C /* kernelmaps.hpp */,
+				4CF84F1F1E6879AE0086CF6C /* vertex.cpp */,
+				4CF84F251E68A34A0086CF6C /* global.h */,
+				4CF84F201E6879AE0086CF6C /* vertex.hpp */,
 				4CF84F1D1E5E6D370086CF6C /* jsonparser.cpp */,
 				4CF84F1E1E5E6D370086CF6C /* jsonparser.hpp */,
 				4CF84F1A1E55598B0086CF6C /* md5.cpp */,
