@@ -29,6 +29,8 @@
 
 using namespace graphchi;
 
+#define METRIC 0
+
 /**
  * Type definitions. Remember to create suitable graph shards using the
  * Sharder-program.
@@ -153,9 +155,13 @@ int KernelMaps::calculate_kernel(std::map<int, int>& map1, std::map<int, int>& m
             map2_arr[i] = 0;
         }
         //Sum of multiplication
-        sum += map1_arr[i] * map2_arr[i];
-        //geometric distance
-        //sum += (map1_arr[i] - map2_arr[i]) * (map1_arr[i] * map2_arr[i]);
+        if (METRIC == 0) {
+            sum += map1_arr[i] * map2_arr[i];
+        }
+        //Sum of geometric distance SQUARED
+        else if (METRIC == 1) {
+            sum += (map1_arr[i] - map2_arr[i]) * (map1_arr[i] * map2_arr[i]);
+        }
     }
     //For debug only:
     //*******************
@@ -170,7 +176,7 @@ int KernelMaps::calculate_kernel(std::map<int, int>& map1, std::map<int, int>& m
     }
     std::cout << std::endl;
     //********************
-    return sqrt(sum);
+    return sum;
 }
 
 
@@ -227,48 +233,6 @@ struct VertexRelabel : public GraphChiProgram<VertexDataType, EdgeDataType> {
 //    int counter = 0;
     std::mutex relabel_map_lock;
     std::mutex label_map_lock;
-//*****************************************
-    //Code in this section is put into a KernelMaps class
-    
-    //insert string to relabel_map if it does not exist, then return the mapped int value
-    //otherwise, return the existing mapped int value
-//    int insert_relabel(std::string label) {
-//        std::pair<std::map<std::string, int>::iterator, bool> rst;
-//        rst = relabel_map.insert(std::pair<std::string, int>(label, counter));
-//        if (rst.second == false) {
-//            logstream(LOG_INFO) << "Label " + label + " is already in the map." << std::endl;
-//            return rst.first->second;
-//        } else {
-//            counter++;
-//            return counter - 1;
-//        }
-//    }
-//    
-//    //insert int to label_map if it does not exist, or update the mapped value otherwise.
-//    void insert_label(int label) {
-//        std::pair<std::map<int, int>::iterator, bool> rst;
-//        rst = label_map.insert(std::pair<int, int>(label, 1));
-//        if (rst.second == false) {
-//            logstream(LOG_INFO) << "Label is already in the map. Updating the value..." << std::endl;
-//            rst.first->second++;
-//        }
-//        return;
-//    }
-//    
-//    void print_relabel_map () {
-//        std::map<std::string, int>::iterator map_itr;
-//        logstream(LOG_INFO) << "Printing relabel map..." << std::endl;
-//        for (map_itr = relabel_map.begin(); map_itr != relabel_map.end(); map_itr++)
-//            logstream(LOG_INFO) << map_itr->first << ":" << map_itr->second << std::endl;
-//    }
-//    
-//    void print_label_map () {
-//        std::map<int, int>::iterator map_itr;
-//        logstream(LOG_INFO) << "Printing label map..." << std::endl;
-//        for (map_itr = label_map.begin(); map_itr != label_map.end(); map_itr++)
-//            logstream(LOG_INFO) << map_itr->first << ":" << map_itr->second << std::endl;
-//    }
-//*********************************************
     /**
      *  Vertex update function.
      */
@@ -1243,7 +1207,7 @@ int main(int argc, const char ** argv) {
             
             //calculate the kernel value between two graphs
             int k_value = km.calculate_kernel(km.label_map, km.label_map_2);
-            //reset the global map for next iteration
+            //reset the maps for next iteration
             km.resetMaps(0);
             //push the kernel value into the global kv vector
             kv.push_back(k_value);
@@ -1253,40 +1217,40 @@ int main(int argc, const char ** argv) {
     }
     //print kv
     std::cout << "Kernel vector values: ";
-    for(size_t i = 0; i < kv.size() - 1; i++) {
+    for(size_t i = 0; i < kv.size(); i++) {
         std::cout << kv[i] << " ";
     }
     std::cout << std::endl;
     
     //produce normalized kernel value for each graph
-    //sum of multiplication
     double normalized_kv[num_graphs] = {};
-    for (int i = 0; i < num_graphs; i++) {
-        double total = 0.0;
-        for (int j = 0; j < num_graphs; j++) {
-            if (i != j) {
-                int self = kv[i*num_graphs-i*(i-1)/2+j-i];
-                int base1 = kv[i*num_graphs-i*(i-1)/2+i-i];
-                int base2 = kv[j*num_graphs-j*(j-1)/2+j-j];
-                double normalized = (double) self/((double)base1*(double)base2);
-                total += normalized;
+    //sum of multiplication
+    if (METRIC == 0) {
+        for (int i = 0; i < num_graphs; i++) {
+            double total = 0.0;
+            for (int j = 0; j < num_graphs; j++) {
+                if (i != j) {
+                    int self = kv[i*num_graphs-i*(i-1)/2+j-i];
+                    int base1 = kv[i*num_graphs-i*(i-1)/2+i-i];
+                    int base2 = kv[j*num_graphs-j*(j-1)/2+j-j];
+                    double normalized = (double) self/((double)base1*(double)base2);
+                    total += normalized;
+                }
             }
+            normalized_kv[i] = total/num_graphs;
         }
-        normalized_kv[i] = total/num_graphs;
+    } else if (METRIC == 1) {//geometric distance
+        for (int i = 0; i < num_graphs; i++) {
+            double total = 0.0;
+            for (int j = 0; j < num_graphs; j++) {
+                if (i != j) {
+                    int dist = sqrt(kv[i*num_graphs-i*(i-1)/2+j-i]);
+                    total += dist;
+                }
+            }
+            normalized_kv[i] = total/(num_graphs - 1);
+        }
     }
-    //geometric distance
-//    double normalized_kv[num_graphs] = {};
-//    for (int i = 0; i < num_graphs; i++) {
-//        double total = 0.0;
-//        for (int j = 0; j < num_graphs; j++) {
-//            if (i != j) {
-//                int dist = kv[i*num_graphs-i*(i-1)/2+j-i];
-//                total += dist;
-//            }
-//        }
-//        normalized_kv[i] = total/(num_graphs - 1);
-//    }
-    
     //print normalize_kv
     std::cout << "Normalized kernel vector values: ";
     for(int i = 0; i < num_graphs; i++) {

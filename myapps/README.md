@@ -14,7 +14,7 @@ The application can take arbitrary number of graphs now. After providing the siz
 
 The sequence of input files corresponds to the sequence of normalized kernel value of each graph.
 
-Currently, three versions available:
+Currently, three versions are available:
 
 * Directionless (`#define VERSION 0` ): Each vertex takes the labels of all neighboring vertices, regardless of whether they are incoming-edge neighbors or outgoing-edge neighbors; edge labels are ignored in this version.
 
@@ -24,7 +24,13 @@ Currently, three versions available:
 
 * Edge-aware (`#define VERSION 2`): This is the version that when sorting the array of labels, edge labels follow their corresponding vertex labels. This version treats incoming-edge and outgoing-edge differently (like version `1`).
 
-Unfortunately, you have to change the macro in the code (`#define VERSION X`, `#define TAKEEDGELABEL X`), rebuild, and re-run at this point.
+Two metrics are available as well:
+
+* Normalized sum of multiplication (`#define METRIC 0`): We illustrate this metric with an example. Consider three count arrays A:[1, 2, 3] B:[2, 0, 1] C:[30, 20, 10]. To obtain a normalized kernel value of A, we first calculate the dot product of A and B (which is 5), A and C (which is 100), A and A (which is 14), B and B (which is 5), and C and C (which is 1400). We notate the dot product of X and Y: D(X, Y). Then we calculate the normalized dot product: ND(X, Y) for X != Y. For instance, we calculate ND(A, B) = D(A, B)/(D(A, A) * D(B, B)). The final value for A is the average of ND(A, B) and ND(A, C).
+
+* Geometric distance (`#define METRIC 1`): For each instance, we calculate the average geometric distance between the instance and the rest of the instances. 
+
+Unfortunately, you have to change the macro in the code (`#define VERSION X`, `#define TAKEEDGELABEL X`, `#define METRIC X`), rebuild, and re-run at this point.
 
 _TODO: The application is not optimized. Many algorithms can be changed to make it more efficient. There are many redundant computations for now. Smaller locks should be used instead as well._
 
