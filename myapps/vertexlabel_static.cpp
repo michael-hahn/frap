@@ -47,6 +47,29 @@ struct type_label {
 typedef int VertexDataType;
 typedef type_label EdgeDataType;//src_type dst_type edge_type
 
+class profile {
+public:
+    double get_mean() {
+        return this->mean;
+    }
+    
+    double get_std() {
+        return this->std;
+    }
+    
+    void set_mean(double mean) {
+        this->mean = mean;
+    }
+    
+    void set_std(double std) {
+        this->std = std;
+    }
+    
+    double mean;
+    double std;
+    std::vector<std::vector<int>> count_arrays;
+};
+
 class KernelMaps {
 public:
     KernelMaps(int counter);
@@ -58,9 +81,9 @@ public:
     //insert int to label_map if it does not exist, or update the mapped value otherwise.
     void insert_label(std::map<int, int>& lmap, int label);
     
-    void print_relabel_map ();
+    void print_relabel_map();
     
-    void print_label_map (std::map<int, int>lmap);
+    void print_label_map(std::map<int, int>lmap);
     
     int calculate_kernel(std::map<int, int>& map1, std::map<int, int>& map2);
     
@@ -133,46 +156,46 @@ int KernelMaps::calculate_kernel(std::map<int, int>& map1, std::map<int, int>& m
         arr_size = map1_size;
     else
         arr_size = map2_size;
-    int map1_arr[arr_size];
-    int map2_arr[arr_size];
+    std::vector<int> map1_arr;
+    std::vector<int> map2_arr;
     std::map<int, int>::iterator map_itr_1 = map1.begin();
     std::map<int, int>::iterator map_itr_2 = map2.begin();
     for (int i = 0; i < arr_size; i++) {
         if (map_itr_1 != map1.end()) {
             if (map_itr_1->first == i) {
-                map1_arr[i] = map_itr_1->second;
+                map1_arr.push_back(map_itr_1->second);
                 map_itr_1++;
-            } else map1_arr[i] = 0;
+            } else map1_arr.push_back(0);
         } else {
-            map1_arr[i] = 0;
+            map1_arr.push_back(0);
         }
         if (map_itr_2 != map2.end()) {
             if (map_itr_2->first == i) {
-                map2_arr[i] = map_itr_2->second;
+                map2_arr.push_back(map_itr_2->second);
                 map_itr_2++;
-            } else map2_arr[i] = 0;
+            } else map2_arr.push_back(0);
         } else {
-            map2_arr[i] = 0;
+            map2_arr.push_back(0);
         }
         //Sum of multiplication
         if (METRIC == 0) {
-            sum += map1_arr[i] * map2_arr[i];
+            sum += map1_arr.back() * map2_arr.back();
         }
         //Sum of geometric distance SQUARED
         else if (METRIC == 1) {
-            sum += (map1_arr[i] - map2_arr[i]) * (map1_arr[i] * map2_arr[i]);
+            sum += (map1_arr.back() - map2_arr.back()) * (map1_arr.back() * map2_arr.back());
         }
     }
     //For debug only:
     //*******************
     std::cout << "Array1: ";
-    for (int i = 0; i < arr_size; i++) {
-        std::cout << map1_arr[i] << " ";
+    for (std::vector<int>::iterator it = map1_arr.begin(); it != map1_arr.end(); it++) {
+        std::cout << *it << " ";
     }
     std::cout << std::endl;
     std::cout << "Array2: ";
-    for (int i = 0; i < arr_size; i++) {
-        std::cout << map2_arr[i] << " ";
+    for (std::vector<int>::iterator it = map2_arr.begin(); it != map2_arr.end(); it++) {
+        std::cout << *it << " ";
     }
     std::cout << std::endl;
     //********************
@@ -1270,6 +1293,28 @@ int main(int argc, const char ** argv) {
     standardDeviation = sqrt(standardDeviation / num_graphs);
     std::cout << "Mean: " << mean << std::endl;
     std::cout << "STD: " << standardDeviation << std::endl;
+    
+    //Determine instances with unusual behavior, and then regenerate the mean and STD without them as part of the profile
+    double two_stds_upper_bound = mean + 2 * standardDeviation;
+    double two_stds_lower_bound = mean - 2 * standardDeviation;
+    std::cout << "boundary is: " << two_stds_lower_bound << " - " << two_stds_upper_bound << std::endl;
+    std::vector<double> good_normalized_kv;
+    for(int i = 0; i < num_graphs; ++i) {
+        if (normalized_kv[i] <= two_stds_upper_bound && normalized_kv[i] >= two_stds_lower_bound)
+            good_normalized_kv.push_back(normalized_kv[i]);
+    }
+    
+    double good_sum = 0.0, good_mean, good_standardDeviation = 0.0;
+    for(std::vector<double>::iterator it = good_normalized_kv.begin(); it != good_normalized_kv.end(); it++){
+        good_sum += *it;
+    }
+    good_mean = good_sum/good_normalized_kv.size();
+    for(std::vector<double>::iterator it = good_normalized_kv.begin(); it != good_normalized_kv.end(); it++)
+        good_standardDeviation += pow(*it - mean, 2);
+    good_standardDeviation = sqrt(good_standardDeviation / good_normalized_kv.size());
+    std::cout << "Good Mean: " << good_mean << std::endl;
+    std::cout << "Good STD: " << good_standardDeviation << std::endl;
+    
     
     //**********Hardcoded for two graphs only
 //    VertexRelabel program;
