@@ -24,6 +24,8 @@ public:
     
     ~KernelMaps();
     
+    void resetMaps();
+    
     void insert_label_map();
         
     int insert_relabel(std::string label);

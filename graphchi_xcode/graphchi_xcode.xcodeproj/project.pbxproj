@@ -172,6 +172,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4C0968C31E6B55AB00C15FAA /* helper.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = helper.cpp; path = ../myapps/helper.cpp; sourceTree = "<group>"; };
 		4CF84F191E5540210086CF6C /* vertexrelabel.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = vertexrelabel.cpp; path = ../camflow/vertexrelabel.cpp; sourceTree = "<group>"; };
 		4CF84F1A1E55598B0086CF6C /* md5.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = md5.cpp; path = ../camflow/md5.cpp; sourceTree = "<group>"; };
 		4CF84F1B1E55598B0086CF6C /* md5.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = md5.hpp; path = ../camflow/md5.hpp; sourceTree = "<group>"; };
@@ -584,6 +585,7 @@
 				4CF84F261E68A4A70086CF6C /* main.cpp */,
 				4CF84F231E6880D90086CF6C /* profile.cpp */,
 				4CF84F241E6880D90086CF6C /* profile.hpp */,
+				4C0968C31E6B55AB00C15FAA /* helper.cpp */,
 				4CF84F221E687A850086CF6C /* kernelmaps.hpp */,
 				4CF84F1F1E6879AE0086CF6C /* vertex.cpp */,
 				4CF84F251E68A34A0086CF6C /* global.h */,

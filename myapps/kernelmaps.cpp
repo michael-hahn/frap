@@ -17,8 +17,16 @@ KernelMaps* KernelMaps::get_instance() {
 }
 
 KernelMaps::~KernelMaps() {
-    relabel_map.clear();
-    label_maps.clear();
+    this->relabel_map.clear();
+    this->label_maps.clear();
+    this->counter = 0;
+    delete single_instance;
+}
+
+void KernelMaps::resetMaps() {
+    this->relabel_map.clear();
+    this->label_maps.clear();
+    this ->counter = 0;
 }
 
 void KernelMaps::insert_label_map() {

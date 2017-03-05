@@ -28,7 +28,8 @@
 
 using namespace graphchi;
 
-#define METRIC 0
+#define KULLBACKLEIBLER 0
+#define METRIC 0 //for old simple normal distribution analysis only
 
 // Parse the type value in the file to the type_label structure for reading
 void parse(type_label &x, const char * s) {
@@ -95,13 +96,17 @@ int main(int argc, const char ** argv) {
     /* Run */
     //create the single instance of KernelMap
     KernelMaps* km = KernelMaps::get_instance();
+    km->resetMaps();
     
     //create a tentative profile
     profile pf;
     
+    pf.reset_arrays();
+    
     //Generate label maps of all instances
     for (int i = 0; i < num_graphs; i++) {
         km->insert_label_map();
+        
         VertexRelabel program;
         graphchi_engine<VertexDataType, EdgeDataType> engine(filenames[i], nshards_arr[i], scheduler, m);
         engine.run(program, niters);
@@ -115,6 +120,51 @@ int main(int argc, const char ** argv) {
         pf.add_array(km->generate_count_array(*it));
     }
     
+    //calculate distance matrix between every two count arrays
+    //the matrix is implemented as a vector. With 3 graphs, A, B, and C, we have [D(A, B), D(A, C), D(B, C)]
+    std::vector<double> distance_matrix;
+    //get all the count arrays
+    std::vector<std::vector<int>> count_arrays = pf.get_count_arrays();
+    
+    //print out all count arrays - debugging
+//    for (std::vector<std::vector<int>>::iterator itr = count_arrays.begin(); itr != count_arrays.end(); itr++) {
+//        std::cout << "Count Array: ";
+//        for (std::vector<int>::iterator itr2 = itr->begin(); itr2 != itr->end(); itr2++) {
+//            std::cout << *itr2 << " ";
+//        }
+//        std::cout << std::endl;
+//    }
+    
+    for (int i = 0 ; i < num_graphs; i++) {
+        for (int j = 1; j < num_graphs - i; j++) {
+            double distance = pf.calculate_distance(KULLBACKLEIBLER, count_arrays[i], count_arrays[i+j]);
+            distance_matrix.push_back(distance);
+        }
+    }
+    
+    //print out distance matrix
+    std::cout << "Distance matrix: ";
+    for (std::vector<double>::iterator itr = distance_matrix.begin(); itr != distance_matrix.end(); itr++) {
+        std::cout << *itr << " ";
+    }
+    std::cout << std::endl;
+    
+    //kmean clustering to detect outliers and to form clusters
+    //if many instances do not fit into a cluster, then we can create multiple clusters to encapsulate many normal behaviors that are quite divergent
+    std::vector<std::vector<int>> cluster = kmean(3, distance_matrix);
+    
+    //print out the cluster:
+    std::cout << "Final result: " << std::endl;
+    for (std::vector<std::vector<int>>::iterator itr = cluster.begin(); itr != cluster.end(); itr++) {
+        std::cout << "Cluster: ";
+        for (std::vector<int>::iterator itr2 = itr->begin(); itr2 != itr->end(); itr2++) {
+            std::cout << *itr2 << " ";
+        }
+        std::cout << std::endl;
+    }
+    
+
+/*
     //values between two count arrays
     std::vector<int> val_two_arrays;
     std::vector<std::vector<int>> count_arrays = pf.get_count_arrays();
@@ -190,6 +240,9 @@ int main(int argc, const char ** argv) {
     for(int i = 0; i < num_graphs; ++i) {
         if (normalized_kv[i] <= two_stds_upper_bound && normalized_kv[i] >= two_stds_lower_bound)
             good_normalized_kv.push_back(normalized_kv[i]);
+        else {
+            pf.remove_array(i);//remove arrays from profile that are not suppose to be part of it
+        }
     }
     
     double good_sum = 0.0, good_mean, good_standardDeviation = 0.0;
@@ -202,6 +255,8 @@ int main(int argc, const char ** argv) {
     good_standardDeviation = sqrt(good_standardDeviation / good_normalized_kv.size());
     std::cout << "Good Mean: " << good_mean << std::endl;
     std::cout << "Good STD: " << good_standardDeviation << std::endl;
+*/
+    
     
     /* Report execution metrics */
     //metrics_report(m);

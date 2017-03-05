@@ -39,7 +39,18 @@ public:
         return this->count_arrays;
     }
     
-    int calculate_two_count_arrays(int method, std::vector<int> arr1, std::vector<int> arr2);
+    void reset_arrays() {
+        this->count_arrays.clear();
+    }
+    
+    int calculate_two_count_arrays(int method, std::vector<int> arr1, std::vector<int> arr2);//for old simple normal distribution analysis only
+    
+    double calculate_distance(int method, std::vector<int> count_array1, std::vector<int> count_array2);
+    
+    void remove_array(int pos) {
+        std::vector<std::vector<int>>::iterator itr = count_arrays.begin();
+        this->count_arrays.erase(itr + pos);
+    }
     
 private:
     
