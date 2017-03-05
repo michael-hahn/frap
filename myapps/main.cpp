@@ -29,7 +29,9 @@
 using namespace graphchi;
 
 #define KULLBACKLEIBLER 0
-#define METRIC 0 //for old simple normal distribution analysis only
+#define HELLINGER 1
+#define METRIC 0 //for old simple normal distribution analysis only. Deprecated
+
 
 // Parse the type value in the file to the type_label structure for reading
 void parse(type_label &x, const char * s) {
