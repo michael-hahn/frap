@@ -30,6 +30,7 @@ using namespace graphchi;
 
 #define KULLBACKLEIBLER 0
 #define HELLINGER 1
+#define EUCLIDEAN 2
 #define METRIC 0 //for old simple normal distribution analysis only. Deprecated
 
 
@@ -139,7 +140,7 @@ int main(int argc, const char ** argv) {
     
     for (int i = 0 ; i < num_graphs; i++) {
         for (int j = 1; j < num_graphs - i; j++) {
-            double distance = pf.calculate_distance(KULLBACKLEIBLER, count_arrays[i], count_arrays[i+j]);
+            double distance = pf.calculate_distance(EUCLIDEAN, count_arrays[i], count_arrays[i+j]);
             distance_matrix.push_back(distance);
         }
     }

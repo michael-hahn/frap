@@ -64,6 +64,17 @@ double profile::calculate_distance(int method, std::vector<int> count_array1, st
         }
         distance = sqrt(distance) / sqrt(2);
     }
+    if (method == 2) {//euclidian distance
+        assert(count_array1.size() == count_array2.size());
+        std::vector<int>::iterator itr_1 = count_array1.begin();
+        std::vector<int>::iterator itr_2 = count_array2.begin();
+        while (itr_1 != count_array1.end()) {
+            distance += (*itr_1 - *itr_2) * (*itr_1 - *itr_2);
+            itr_1++;
+            itr_2++;
+        }
+        distance = sqrt(distance);
+    }
     return distance;
 }
 
