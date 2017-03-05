@@ -39,6 +39,12 @@ struct VertexRelabel : public GraphChiProgram<VertexDataType, EdgeDataType> {
      *  Vertex update function.
      */
     void update(graphchi_vertex<VertexDataType, EdgeDataType> &vertex, graphchi_context &gcontext) {
+        //this should not happen if data is clean - node id should be sequential and there should not be any skipped ids
+        //we skip here for dirty data
+        if (vertex.num_inedges() <= 0 && vertex.num_outedges() <= 0) {
+            logstream(LOG_FATAL) << "Isolated vertex detected" << std::endl;
+            return;
+        }
         //swap phase in odd-numbered iterations
         if (gcontext.iteration % 2 == 1) {
             for(int i=0; i < vertex.num_inedges(); i++) {
