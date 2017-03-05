@@ -34,6 +34,18 @@ Unfortunately, you have to change the macro in the code (`#define VERSION X`, `#
 
 _TODO: The application is not optimized. Many algorithms can be changed to make it more efficient. There are many redundant computations for now. Smaller locks should be used instead as well._
 
+#### Run the better version
+
+Exactly the same way as running vertexlabel_static!
+
+At `graph-chi` directory, run:
+
+`make myapps/main`
+
+and then use the following command to run the application:
+
+`bin/myapps/main ngraphs <num_of_graphs> file0 <file_name> file1 <file_name> ...  niters <iteration_time>`
+
 #### Make file in `myapps` directory:
 
 This `Makefile` is to make jsonparser application.
