@@ -30,6 +30,16 @@ Two metrics are available as well:
 
 * Geometric distance (`#define METRIC 1`): For each instance, we calculate the average geometric distance between the instance and the rest of the instances. 
 
+Now we use fancy statistical analysis to detect anomaly. We have implemented 3 different distance measures and k-mean clustering:
+
+* Kullback-Leibler distance: symmetric Kullback-Leibler divergence with back-off probability (`#define KULLBACKLEIBLER 0`).
+
+* Hellinger distance: a symmetric Bhattacharyya distance that obeys triangle inequality. (`#define HELLINGER 1`).
+
+* Euclidean distance: same as geometric distance. (`#define EUCLIDEAN 2`).
+
+All above distance measures are used to perform K-mean clustering.
+
 Unfortunately, you have to change the macro in the code (`#define VERSION X`, `#define TAKEEDGELABEL X`, `#define METRIC X`), rebuild, and re-run at this point.
 
 _TODO: The application is not optimized. Many algorithms can be changed to make it more efficient. There are many redundant computations for now. Smaller locks should be used instead as well._
