@@ -152,8 +152,9 @@ int main (int argc, const char ** argv) {
             Json::Reader reader;
             bool parsingSuccessful = reader.parse(provData, root);
             if (!parsingSuccessful) {
-                std::cout  << "Failed to parse provData" << std::endl << reader.getFormattedErrorMessages();
-                assert(parsingSuccessful == true);
+                std::cout  << "Unparsable line format..." << std::endl << reader.getFormattedErrorMessages();
+                //assert(parsingSuccessful == true);
+                continue;
             }
             if (root.isMember("activity")){
                 Json::Value activities = root["activity"];
@@ -200,8 +201,9 @@ int main (int argc, const char ** argv) {
             Json::Reader sreader;
             bool sparsingSuccessful = sreader.parse(provData, sroot);
             if (!sparsingSuccessful) {
-                std::cout  << "Failed to parse provData again" << std::endl << sreader.getFormattedErrorMessages();
-                assert(sparsingSuccessful == true);
+                std::cout  << "Unparsable line format..." << std::endl << sreader.getFormattedErrorMessages();
+                //assert(sparsingSuccessful == true);
+                continue;
             }
             if (sroot.isMember("used")) {
                 Json::Value useds = sroot["used"];
