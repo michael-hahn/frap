@@ -42,7 +42,7 @@ struct VertexRelabel : public GraphChiProgram<VertexDataType, EdgeDataType> {
         //this should not happen if data is clean - node id should be sequential and there should not be any skipped ids
         //we skip here for dirty data
         if (vertex.num_inedges() <= 0 && vertex.num_outedges() <= 0) {
-            logstream(LOG_FATAL) << "Isolated vertex detected" << std::endl;
+            logstream(LOG_INFO) << "Isolated vertex "<<  vertex.id() <<" detected" << std::endl;
             return;
         }
         //swap phase in odd-numbered iterations

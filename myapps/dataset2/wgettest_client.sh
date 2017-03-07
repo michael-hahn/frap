@@ -4,7 +4,8 @@
 #We assume that wget is of version prior to 1.18; otherwise, no exploit will take place.
 #we also assume that the script is in the superuser mode, and run in /root directory
 #One must input the IP address of the server to retrieve data
-#One must also provide a path to save the provenance file (or comment out the last line and keep it in /tmp/audit.log)
+#One must also provide a path to save the provenance file
+#We assume jsonparser is in the same working directory to run
 
 #usage: ./wgettest_client.sh <IP_address> <destination_file_path>
 
@@ -34,4 +35,6 @@ wget -N $1
 
 sleep 4s
 
-sudo cp /tmp/audit.log $2
+clang++ -std=c++0x -stdlib=libc++ -lc++ jsonparser.cpp -o jsonparser
+
+./jsonparser /tmp/audit.log $1

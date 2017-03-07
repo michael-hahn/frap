@@ -14,10 +14,7 @@ read file
 
 tcpdump -r $file
 
-sudo cp /tmp/audit.log tmp.txt
-
 clang++ -std=c++0x -stdlib=libc++ -lc++ jsonparser.cpp -o jsonparser
 
-./jsonparser tmp.txt $1
+./jsonparser /tmp/audit.log $1
 
-rm tmp.txt
