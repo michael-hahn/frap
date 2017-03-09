@@ -113,7 +113,7 @@ bool Maps::insert_id(std::map<std::string, int>& map, std::string id_str, int id
     rst = map.insert(std::pair<std::string, int>(id_str, id));
     if (rst.second == false)
         std::cout << "ID: " << id_str << " is already in the map." << std::endl;
-    std::cout << "Node String: " << id_str << "Node Id:" << id << std::endl;
+    std::cout << "Node String: " << id_str << " Node Id:" << id << std::endl;
     return rst.second;
 }
 

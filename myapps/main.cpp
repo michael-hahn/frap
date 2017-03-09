@@ -31,7 +31,7 @@ using namespace graphchi;
 #define KULLBACKLEIBLER 0
 #define HELLINGER 1
 #define EUCLIDEAN 2
-#define METRIC 0 //for old simple normal distribution analysis only. Deprecated
+#define METRIC 1 //for old simple normal distribution analysis only. Deprecated
 
 
 // Parse the type value in the file to the type_label structure for reading
@@ -122,7 +122,7 @@ int main(int argc, const char ** argv) {
     for (std::vector<std::map<int, int>>::iterator it = label_maps.begin(); it != label_maps.end(); it++) {
         pf.add_array(km->generate_count_array(*it));
     }
-    
+
     //calculate distance matrix between every two count arrays
     //the matrix is implemented as a vector. With 3 graphs, A, B, and C, we have [D(A, B), D(A, C), D(B, C)]
     std::vector<double> distance_matrix;
@@ -140,7 +140,7 @@ int main(int argc, const char ** argv) {
     
     for (int i = 0 ; i < num_graphs; i++) {
         for (int j = 1; j < num_graphs - i; j++) {
-            double distance = pf.calculate_distance(EUCLIDEAN, count_arrays[i], count_arrays[i+j]);
+            double distance = pf.calculate_distance(KULLBACKLEIBLER, count_arrays[i], count_arrays[i+j]);
             distance_matrix.push_back(distance);
         }
     }
@@ -154,18 +154,26 @@ int main(int argc, const char ** argv) {
     
     //kmean clustering to detect outliers and to form clusters
     //if many instances do not fit into a cluster, then we can create multiple clusters to encapsulate many normal behaviors that are quite divergent
-    std::vector<std::vector<int>> cluster = kmean(3, distance_matrix);
+    std::vector<std::vector<int>> cluster = kmean(10, distance_matrix);
     
     //print out the cluster:
+    //format: graph_x - graph_y
     std::cout << "Final result: " << std::endl;
     for (std::vector<std::vector<int>>::iterator itr = cluster.begin(); itr != cluster.end(); itr++) {
         std::cout << "Cluster: ";
         for (std::vector<int>::iterator itr2 = itr->begin(); itr2 != itr->end(); itr2++) {
-            std::cout << *itr2 << " ";
+            for (int x = 0; x < 10 - 1; x++) {
+                for (int y = 0; y < 10 - 1 - x; y++) {
+                    if ((((( 9 + ( 10 - x )) * x ) / 2 ) + y ) == *itr2) {
+                        std::cout << x << "-" << x + 1 + y << " ";
+                    }
+                }
+            }
+//            std::cout << *itr2 << " ";
         }
         std::cout << std::endl;
     }
-    
+
 
 /*
     //values between two count arrays
@@ -259,7 +267,6 @@ int main(int argc, const char ** argv) {
     std::cout << "Good Mean: " << good_mean << std::endl;
     std::cout << "Good STD: " << good_standardDeviation << std::endl;
 */
-    
     
     /* Report execution metrics */
     //metrics_report(m);
