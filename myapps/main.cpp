@@ -252,7 +252,25 @@ int main(int argc, const char ** argv) {
 //    for (std::map<int, int>::iterator it = cluster_has_instance_number.begin(); it != cluster_has_instance_number.end(); it++) {
 //        std::cout << it->first << "->" << it->second << std::endl;
 //    }
-    .
+    
+    //bad_cluster has all cluster numbers that contain bad instances
+    std::vector<int> bad_cluster;
+    for (std::map<int, int>::iterator it = cluster_has_instance_number.begin(); it != cluster_has_instance_number.end(); it++) {
+        if ((double)it->second < num_graphs * 0.15) {
+            //std::cout << it->first << std::endl;
+            bad_cluster.push_back(it->first);
+        }
+    }
+    
+    for (std::vector<int>::iterator it = bad_cluster.begin(); it != bad_cluster.end(); it++) {
+        for (std::map<int, int>::iterator itr = instance_belongs.begin(); itr != instance_belongs.end(); itr++) {
+            if (itr->second == *it) {
+                std::cout << itr->first << std::endl;
+            }
+        }
+    }
+    
+    
     
 /*
     //values between two count arrays

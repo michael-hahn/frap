@@ -143,10 +143,87 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
     return rtn;
 }
 
+/*
 
+std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) {
+    int matrix_size = distance_matrix.size();
+    double cluster[k];
+    double newCluster[k];
+    double group[k][matrix_size];
+    std::vector<double> newGroup[k];
+    std::vector<std::vector<int>> rtn;
+    bool converge = true;
+    
+    for (int i = 0; i < k; i++) {
+        std::vector<int> vec;
+        rtn.push_back(vec);
+        
+        // BAD, might be putting two clusters in the same place.
+        cluster[i] = distance_matrix[rand() % matrix_size];
+        newCluster[i] = 0.0;
+    }
+    do {
+        converge = true;
+        for (int i = 0; i < k; i++) {
+            int j = 0;
+            for (std::vector<double>::iterator itr = distance_matrix.begin(); itr != distance_matrix.end(); itr++) {
+                group[i][j] = abs(*itr - cluster[i]);
+                j++;
+            }
+        }
+        
+        for (int i = 0; i < matrix_size; i++) {
+            int groupNum = 0;
+            double min = group[0][i];
+            for (int p = 1; p < k; p++) {
+                if (group[p][i] < min) {
+                    min = group[p][i];
+                    groupNum = p;
+                }
+            }
+            rtn[groupNum].push_back(i);
+            newGroup[groupNum].push_back(distance_matrix[i]);
+        }
+        
+        for (int q = 0; q < k; q++) {
+            newCluster[q] = mean(newGroup[q]);
+        }
+        
+        for (int t = 0; t < k; t++) {
+            if (newCluster[t] != cluster[t])
+                converge = false;
+        }
+        
+        //        std::cout << "rtn value: " << std::endl;
+        //        for (std::vector<std::vector<int>>::iterator itr = rtn.begin(); itr != rtn.end(); itr++) {
+        //            std::cout << "Cluster: ";
+        //            for (std::vector<int>::iterator itr2 = itr->begin(); itr2 != itr->end(); itr2++) {
+        //                std::cout << *itr2 << " ";
+        //            }
+        //            std::cout << std::endl;
+        //        }
+        //        std:: cout << std::endl;
+        
+        if (!converge) {
+            for (int d = 0; d < k; d++) {
+                cluster[d] = newCluster[d];
+                rtn[d].clear();
+                newGroup[d].clear();
+            }
+        }
+        
+        //        std::cout << "newCluster: ";
+        //        for (int i = 0; i < k; i++) {
+        //            std::cout << newCluster[i] << " ";
+        //        }
+        //        std:: cout << std::endl;
+        
+    } while (!converge);
+    
+    return rtn;
+}
 
-
-
+*/
 
 
 
