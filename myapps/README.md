@@ -56,6 +56,35 @@ and then use the following command to run the application:
 
 `bin/myapps/main ngraphs <num_of_graphs> file0 <file_name> file1 <file_name> ...  niters <iteration_time>`
 
+##### Experiment Results 
+
+We run the following command:
+
+`bin/myapps/main ngraphs 15 file0 myapps/server/edgeList1.txt file1 myapps/server/edgeList2.txt file2 myapps/server/edgeList3.txt file3 myapps/server/edgeList4.txt file4 myapps/server/edgeList5.txt file5 myapps/server/edgeList6.txt file6 myapps/server/edgeList7.txt file7 myapps/server/edgeList8.txt file8 myapps/server/edgeList9.txt file9 myapps/server/edgeList_bad.txt file10 myapps/dataset1/edgeList1.txt file11 myapps/dataset1/edgeList2.txt file12 myapps/dataset1/edgeList3.txt file13 myapps/dataset1/edgeList4.txt file14 myapps/dataset1/edgeList_bad.txt niters 4`
+
+(Use Kullback-Leibler distance metric)
+
+* Explanation: file 0 - 8 are one normal program behavior; file 10 - 13 are another normal program behavior; file 9 and 14 are two different abnormal progrma behavior
+
+* The results (by clustering pairwise distances):
+```
+Cluster: 0-1 0-2 0-3 0-4 0-5 0-7 0-8 1-2 1-3 1-4 1-5 1-6 1-7 1-8 2-3 2-4 2-5 2-6 2-7 2-8 3-4 3-5 3-6 3-7 3-8 4-5 4-6 4-7 4-8 5-7 5-8 6-7 6-8 7-8 10-12 10-13 11-12 11-13 
+Cluster: 0-14 1-14 2-14 3-14 4-14 6-14 7-14 8-14 
+Cluster: 0-10 0-11 0-12 0-13 1-10 1-11 1-12 1-13 2-10 2-11 2-12 2-13 3-10 3-11 3-12 3-13 4-10 4-11 4-12 4-13 5-10 5-11 5-12 5-13 6-10 6-11 6-12 6-13 7-10 7-11 7-12 7-13 8-10 8-11 8-12 8-13 9-10 9-11 9-12 9-13 10-14 11-14 13-14 
+Cluster: 5-14 
+Cluster: 0-9 1-9 2-9 3-9 4-9 5-6 5-9 6-9 7-9 8-9 12-14 
+Cluster: 10-11 12-13 
+Cluster: 
+Cluster: 0-6 
+Cluster: 
+Cluster: 
+Cluster: 9-14 
+Cluster: 
+Cluster: 
+Cluster: 
+Cluster: 
+```
+* Our clustering and analysis algorithm can find abnormal program run: 9 and 14
 #### Make file in `myapps` directory:
 
 This `Makefile` is to make jsonparser application.
