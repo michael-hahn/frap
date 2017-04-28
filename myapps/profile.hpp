@@ -41,6 +41,7 @@ public:
     
     void reset_arrays() {
         this->count_arrays.clear();
+        this->cluster_groups.clear();
     }
     
     void reset_map() {
@@ -66,6 +67,9 @@ private:
     
     //map that records the longest distance between a well-behaved instance and the rest of the well-behaved ones
     std::map<int, double> instance_distance_map;
+    
+    //each vector contains the id of instances that belongs together
+    std::vector<std::vector<int>> cluster_groups;
 };
 
 #include "profile.cpp"

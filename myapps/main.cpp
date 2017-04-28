@@ -105,6 +105,7 @@ int main(int argc, const char ** argv) {
     profile pf;
     
     pf.reset_arrays();
+    pf.reset_map();
     
     //Generate label maps of all instances
     for (int i = 0; i < num_graphs; i++) {
@@ -139,7 +140,7 @@ int main(int argc, const char ** argv) {
 //    }
     for (int i = 0 ; i < num_graphs; i++) {
         for (int j = 1; j < num_graphs - i; j++) {
-            double distance = pf.calculate_distance(EUCLIDEAN, count_arrays[i], count_arrays[i+j]);
+            double distance = pf.calculate_distance(KULLBACKLEIBLER, count_arrays[i], count_arrays[i+j]);
             distance_matrix.push_back(distance);
         }
     }
@@ -153,27 +154,106 @@ int main(int argc, const char ** argv) {
     
     //kmean clustering to detect outliers and to form clusters
     //if many instances do not fit into a cluster, then we can create multiple clusters to encapsulate many normal behaviors that are quite divergent
-    std::vector<std::vector<int>> cluster = kmean(10, distance_matrix);
+    std::vector<std::vector<int>> cluster = kmean(num_graphs, distance_matrix);
     
     //print out the cluster:
     //format: graph_x - graph_y
-    std::cout << "Final result: " << std::endl;
+    
+    //this vector contains for each clutser the instance that appears and the number of distance value of that instance
+    //e.g. if cluster 0 has 1-0 1-2 1-4, then we have [(1 -> 3, 2 -> 1, 4 -> 1), <other_maps>]
+    std::vector<std::map<int, int>> cluster_temps;
+    
     for (std::vector<std::vector<int>>::iterator itr = cluster.begin(); itr != cluster.end(); itr++) {
         std::cout << "Cluster: ";
+        std::map<int, int> temp;
         for (std::vector<int>::iterator itr2 = itr->begin(); itr2 != itr->end(); itr2++) {
-            for (int x = 0; x < 10 - 1; x++) {
-                for (int y = 0; y < 10 - 1 - x; y++) {
-                    if ((((( 9 + ( 10 - x )) * x ) / 2 ) + y ) == *itr2) {
+            for (int x = 0; x < num_graphs - 1; x++) {
+                for (int y = 0; y < num_graphs - 1 - x; y++) {
+                    if ((((( (num_graphs - 1) + ( num_graphs - x )) * x ) / 2 ) + y ) == *itr2) {
                         std::cout << x << "-" << x + 1 + y << " ";
+                        std::pair<std::map<int,int>::iterator,bool> ret;
+                        ret = temp.insert ( std::pair<int,int>(x,1) );
+                        if (ret.second==false) {
+                            ret.first->second++;
+                        }
+                        ret = temp.insert ( std::pair<int,int>(x+1+y,1) );
+                        if (ret.second==false) {
+                            ret.first->second++;
+                        }
                     }
                 }
             }
 //            std::cout << *itr2 << " ";
         }
         std::cout << std::endl;
+        cluster_temps.push_back(temp);
     }
-    pf.reset_map();
-
+    //for debugging; print cluster_temps
+//    std::cout << std::endl;
+//    for (size_t i = 0; i < cluster_temps.size(); i++) {
+//        for (std::map<int, int>::iterator it = cluster_temps[i].begin(); it != cluster_temps[i].end(); it++) {
+//            std::cout << it->first << "," << it->second << " ";
+//        }
+//        std::cout << std::endl;
+//    }
+    
+    //this map the vector cluster_temps
+    //if instance 0 has 3 in cluster 0 and 4 in cluster 1 the map entry will be 0 -> [<0, 3> <1, 4>]
+    std::map<int, std::vector<std::pair<int, int>>> instance_temp;
+    for (int i = 0; i < (int) cluster_temps.size(); i++) {
+        for (std::map<int, int>::iterator itr = cluster_temps[i].begin(); itr != cluster_temps[i].end(); itr++) {
+            std::pair<std::map<int, std::vector<std::pair<int, int>>>::iterator,bool> ret;
+            std::vector<std::pair<int, int>> start_vec;
+            start_vec.push_back(std::pair<int, int>(i, itr->second));
+            ret = instance_temp.insert ( std::pair<int,std::vector<std::pair<int, int>>>(itr->first, start_vec) );
+            if (ret.second==false) {
+                ret.first->second.push_back(std::pair<int, int>(i, itr->second));
+            }
+        }
+    }
+    //for debugging; print instance_temp
+//    for (std::map<int, std::vector<std::pair<int, int>>>::iterator it = instance_temp.begin(); it != instance_temp.end(); it++) {
+//        std::cout << it->first << ":";
+//        for (std::vector<std::pair<int, int>>::iterator itr = it->second.begin(); itr != it->second.end(); itr++) {
+//            std::cout << itr->first << "," << itr->second << "  ";
+//        }
+//        std::cout << std::endl;
+//    }
+    
+    //this map shows what instance belongs to what group
+    std::map<int, int> instance_belongs;
+    for (std::map<int, std::vector<std::pair<int, int>>>::iterator it = instance_temp.begin(); it != instance_temp.end(); it++) {
+        int max_clutser_population = 0;
+        int instance_goes_to = -1;
+        for (std::vector<std::pair<int, int>>::iterator itr = it->second.begin(); itr != it->second.end(); itr++) {
+            if (itr->second >= max_clutser_population) {
+                max_clutser_population = itr->second;
+                instance_goes_to = itr->first;
+            }
+        }
+        assert (instance_goes_to >= 0);
+        instance_belongs.insert(std::pair<int, int>(it->first, instance_goes_to));
+    }
+    //for debugging: print instance_belongs;
+//    for (std::map<int, int>::iterator it = instance_belongs.begin(); it != instance_belongs.end(); it++) {
+//        std::cout << it->first << "->" << it->second << std::endl;
+//    }
+    
+    //cluster_id -> # of instances in this cluster
+    std::map<int, int> cluster_has_instance_number;
+    for (std::map<int, int>::iterator it = instance_belongs.begin(); it != instance_belongs.end(); it++) {
+        std::pair<std::map<int,int>::iterator,bool> ret;
+        ret = cluster_has_instance_number.insert ( std::pair<int,int>(it->second,1) );
+        if (ret.second==false) {
+            ret.first->second++;
+        }
+    }
+    //for debugging: print cluster_has_instance_number
+//    for (std::map<int, int>::iterator it = cluster_has_instance_number.begin(); it != cluster_has_instance_number.end(); it++) {
+//        std::cout << it->first << "->" << it->second << std::endl;
+//    }
+    .
+    
 /*
     //values between two count arrays
     std::vector<int> val_two_arrays;
