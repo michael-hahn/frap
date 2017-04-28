@@ -10,7 +10,7 @@
 #define profile_hpp
 
 #include <vector>
-
+#include <map>
 
 class profile {
 public:
@@ -43,6 +43,10 @@ public:
         this->count_arrays.clear();
     }
     
+    void reset_map() {
+        this->instance_distance_map.clear();
+    }
+    
     int calculate_two_count_arrays(int method, std::vector<int> arr1, std::vector<int> arr2);//for old simple normal distribution analysis only
     
     double calculate_distance(int method, std::vector<int> count_array1, std::vector<int> count_array2);
@@ -59,6 +63,9 @@ private:
     double std;
     
     std::vector<std::vector<int>> count_arrays;
+    
+    //map that records the longest distance between a well-behaved instance and the rest of the well-behaved ones
+    std::map<int, double> instance_distance_map;
 };
 
 #include "profile.cpp"

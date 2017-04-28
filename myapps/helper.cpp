@@ -77,6 +77,8 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
     for (int i = 0; i < k; i++) {
         std::vector<int> vec;
         rtn.push_back(vec);
+        
+        // BAD, might be putting two clusters in the same place.
         cluster[i] = distance_matrix[rand() % matrix_size];
         newCluster[i] = 0.0;
     }
