@@ -138,6 +138,7 @@ int main(int argc, const char ** argv) {
 //        }
 //        std::cout << std::endl;
 //    }
+    
     for (int i = 0 ; i < num_graphs; i++) {
         for (int j = 1; j < num_graphs - i; j++) {
             double distance = pf.calculate_distance(KULLBACKLEIBLER, count_arrays[i], count_arrays[i+j]);

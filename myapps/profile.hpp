@@ -65,6 +65,9 @@ private:
     
     std::vector<std::vector<int>> count_arrays;
     
+    //Centroids of all clusters
+    std::vector<std::vector<double>> centroids;
+    
     //map that records the longest distance between a well-behaved instance and the rest of the well-behaved ones
     std::map<int, double> instance_distance_map;
     
