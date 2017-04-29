@@ -17,7 +17,7 @@ std::vector<double> count_distribution(std::vector<int> count_array, bool back_o
     std::vector<double> count_distr;
     int sum = 0;
     int zero_count = 0;
-    
+
     for (std::vector<int>::iterator itr = count_array.begin(); itr != count_array.end(); itr++) {
         if (*itr != 0)
             sum += *itr;
@@ -77,7 +77,7 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
     for (int i = 0; i < k; i++) {
         std::vector<int> vec;
         rtn.push_back(vec);
-        
+
         // BAD, might be putting two clusters in the same place.
         cluster[i] = distance_matrix[rand() % matrix_size];
         newCluster[i] = 0.0;
@@ -91,7 +91,7 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
                 j++;
             }
         }
-        
+
         for (int i = 0; i < matrix_size; i++) {
             int groupNum = 0;
             double min = group[0][i];
@@ -104,16 +104,16 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
             rtn[groupNum].push_back(i);
             newGroup[groupNum].push_back(distance_matrix[i]);
         }
-        
+
         for (int q = 0; q < k; q++) {
             newCluster[q] = mean(newGroup[q]);
         }
-        
+
         for (int t = 0; t < k; t++) {
             if (newCluster[t] != cluster[t])
                 converge = false;
         }
-        
+
 //        std::cout << "rtn value: " << std::endl;
 //        for (std::vector<std::vector<int>>::iterator itr = rtn.begin(); itr != rtn.end(); itr++) {
 //            std::cout << "Cluster: ";
@@ -123,7 +123,7 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
 //            std::cout << std::endl;
 //        }
 //        std:: cout << std::endl;
-        
+
         if (!converge) {
             for (int d = 0; d < k; d++) {
                 cluster[d] = newCluster[d];
@@ -131,48 +131,57 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
                 newGroup[d].clear();
             }
         }
-        
+
 //        std::cout << "newCluster: ";
 //        for (int i = 0; i < k; i++) {
 //            std::cout << newCluster[i] << " ";
 //        }
 //        std:: cout << std::endl;
-        
+
     } while (!converge);
-    
+
     return rtn;
 }
 
-/*
+std::vector<std::vector<int>> kmean(int k, std::vector<std::vector<int>> count_array) {
+    int nvec = count_array.size();
+    int array_size = count_array[0].size();
 
-std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) {
-    int matrix_size = distance_matrix.size();
-    double cluster[k];
-    double newCluster[k];
-    double group[k][matrix_size];
-    std::vector<double> newGroup[k];
-    std::vector<std::vector<int>> rtn;
+    double cluster[k][array_size];
+    double newCluster[k][array_size];
+    double group[k][nvec];
+
+    std::vector<std::vector<double>> newGroup[k];
+    std::vector<std::vector<int>> rtn;  // Final variable to return
+
+
     bool converge = true;
-    
+
+    //Initialise rtn
+
     for (int i = 0; i < k; i++) {
         std::vector<int> vec;
         rtn.push_back(vec);
-        
+
         // BAD, might be putting two clusters in the same place.
-        cluster[i] = distance_matrix[rand() % matrix_size];
-        newCluster[i] = 0.0;
+        //cluster[i] = distance_matrix[rand() % matrix_size];
+        std::vector<double> temp (array_size,0);
+        cluster[i] = count_array[rand() % nvec];
+        newCluster[i] = temp;
     }
+
+    // Calculate distance to each cluster
     do {
         converge = true;
         for (int i = 0; i < k; i++) {
             int j = 0;
-            for (std::vector<double>::iterator itr = distance_matrix.begin(); itr != distance_matrix.end(); itr++) {
-                group[i][j] = abs(*itr - cluster[i]);
+            for (std::vector<std::vector<int>>::iterator itr = count_array.begin(); itr != count_array.end(); itr++) {
+                group[i][j] = calculate_distance(0, *itr, cluster[i]);  // distance of j-th entry to i-th cluster
                 j++;
             }
         }
-        
-        for (int i = 0; i < matrix_size; i++) {
+
+        for (int i = 0; i < nvec; i++) {
             int groupNum = 0;
             double min = group[0][i];
             for (int p = 1; p < k; p++) {
@@ -182,18 +191,31 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
                 }
             }
             rtn[groupNum].push_back(i);
-            newGroup[groupNum].push_back(distance_matrix[i]);
+            newGroup[groupNum].push_back(count_array[i]);
         }
-        
+
         for (int q = 0; q < k; q++) {
-            newCluster[q] = mean(newGroup[q]);
+          std::vector<double> sum(array_size,0);
+          for (std::vector<std::vector<double>>::iterator it = newGroup[q].begin(); it != newGroup[q].end(); it++) {
+            for(int f = 0; f < array_size; f++) {
+              sum[f] += *it;
+            }
+          }
+          for(int g = 0; g < array_size; g++) {
+            sum[g] /= newGroup[q].size();
+          }
+          for (int d = 0; d < array_size; d++) {
+            newCluster[q][d] = sum[d];// calculate mean of distribution for a cluster
+          }
         }
-        
+
         for (int t = 0; t < k; t++) {
-            if (newCluster[t] != cluster[t])
+          for (int r = 0; r < array_size; r++) {
+            if (newCluster[t][r] != cluster[t][r])
                 converge = false;
+          }
         }
-        
+
         //        std::cout << "rtn value: " << std::endl;
         //        for (std::vector<std::vector<int>>::iterator itr = rtn.begin(); itr != rtn.end(); itr++) {
         //            std::cout << "Cluster: ";
@@ -203,7 +225,7 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
         //            std::cout << std::endl;
         //        }
         //        std:: cout << std::endl;
-        
+
         if (!converge) {
             for (int d = 0; d < k; d++) {
                 cluster[d] = newCluster[d];
@@ -211,38 +233,14 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
                 newGroup[d].clear();
             }
         }
-        
+
         //        std::cout << "newCluster: ";
         //        for (int i = 0; i < k; i++) {
         //            std::cout << newCluster[i] << " ";
         //        }
         //        std:: cout << std::endl;
-        
+
     } while (!converge);
-    
+
     return rtn;
 }
-
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
