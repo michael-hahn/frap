@@ -38,6 +38,10 @@ public:
         return this->label_maps;
     }
     
+    std::map<std::string, int> get_relabel_map () {
+        return this->relabel_map;
+    }
+    
     void print_relabel_map();
     
     void print_label_map(std::map<int, int>lmap);

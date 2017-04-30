@@ -350,6 +350,8 @@ struct VertexRelabelDetection : public GraphChiProgram<VertexDataType, EdgeDataT
     
     //get the singleton kernelMaps
     KernelMaps* km = KernelMaps::get_instance();
+    //get the relabel map of the kernelmap
+    std::map<std::string, int> reference_map = km->get_relabel_map();
     
     //locks for sync update
     std::mutex relabel_map_lock;
@@ -371,14 +373,14 @@ struct VertexRelabelDetection : public GraphChiProgram<VertexDataType, EdgeDataT
                 type_label in_type = in_edge->get_data();
                 in_type.old_dst = in_type.new_dst;
                 in_edge->set_data(in_type);
-                logstream(LOG_INFO) << "Swapped in edges of " << vertex.id() << " to " << in_type.old_dst << std::endl;
+                //logstream(LOG_INFO) << "Swapped in edges of " << vertex.id() << " to " << in_type.old_dst << std::endl;
             }
             for (int i=0; i < vertex.num_outedges(); i++) {
                 graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
                 type_label out_type = out_edge->get_data();
                 out_type.old_src = out_type.new_src;
                 out_edge->set_data(out_type);
-                logstream(LOG_INFO) << "Swapped out edges of " << vertex.id() << " to " << out_type.old_src << std::endl;
+                //logstream(LOG_INFO) << "Swapped out edges of " << vertex.id() << " to " << out_type.old_src << std::endl;
             }
         } else {//update phase in even-numbered iterations
             if (gcontext.iteration == 0) {
@@ -409,13 +411,30 @@ struct VertexRelabelDetection : public GraphChiProgram<VertexDataType, EdgeDataT
                 //make sure vertex must have a valid string, not an empty string
                 if (vertex_label != "") {
                     relabel_map_lock.lock();
-                    int label_map_label = km->insert_relabel(vertex_label);
+                    
+                    int label_map_label;
+                    std::pair<std::map<std::string, int>::iterator, bool> rst_temp;
+                    rst_temp = reference_map.insert(std::pair<std::string, int>(vertex_label, reference_map.size()));
+                    if (rst_temp.second == false) {
+                        //logstream(LOG_INFO) << "Label " + vertex_label + " is already in the map." << std::endl;
+                        label_map_label = rst_temp.first->second;
+                    } else {
+                        label_map_label = reference_map.size();
+                    }
+                    
                     relabel_map_lock.unlock();
                     label_map_lock.lock();
-                    km->insert_label(label_map_label);
+                    
+                    std::pair<std::map<int, int>::iterator, bool> rst_temp2;
+                    rst_temp2 = monitored.label_map.insert(std::pair<int, int>(label_map_label, 1));
+                    if (rst_temp2.second == false) {
+                        //logstream(LOG_INFO) << "Label is already in the map. Updating the value..." << std::endl;
+                        rst_temp2.first->second++;
+                    }
+                    
                     label_map_lock.unlock();
                     vertex.set_data(label_map_label);
-                    logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label << std::endl;
+                    //logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label << std::endl;
                 } else {
                     logstream(LOG_FATAL) << "Invalid vertex_label in relabel_map. " << std::endl;
                     assert (vertex_label != "");
@@ -490,8 +509,30 @@ struct VertexRelabelDetection : public GraphChiProgram<VertexDataType, EdgeDataT
                     }
                     
                     relabel_map_lock.lock();
-                    int label_map_label_incoming = km->insert_relabel(new_incoming_label);
-                    int label_map_label_outgoing = km->insert_relabel(new_outgoing_label);
+                    
+                    
+                    int label_map_label_incoming;
+                    int label_map_label_outgoing;
+                    
+                    std::pair<std::map<std::string, int>::iterator, bool> rst_temp_incoming;
+                    rst_temp_incoming = reference_map.insert(std::pair<std::string, int>(new_incoming_label, reference_map.size()));
+                    if (rst_temp_incoming.second == false) {
+                        //logstream(LOG_INFO) << "Label " + new_incoming_label + " is already in the map." << std::endl;
+                        label_map_label_incoming = rst_temp_incoming.first->second;
+                    } else {
+                        label_map_label_incoming = reference_map.size();
+                    }
+                    
+                    std::pair<std::map<std::string, int>::iterator, bool> rst_temp_outgoing;
+                    rst_temp_outgoing = reference_map.insert(std::pair<std::string, int>(new_outgoing_label, reference_map.size()));
+                    if (rst_temp_outgoing.second == false) {
+                        //logstream(LOG_INFO) << "Label " + new_outgoing_label + " is already in the map." << std::endl;
+                        label_map_label_outgoing = rst_temp_outgoing.first->second;
+                    } else {
+                        label_map_label_outgoing = reference_map.size();
+                    }
+                    
+                    
                     relabel_map_lock.unlock();
                     
                     std::string new_combined_label = ""; //label_map_label_incoming,label_map_label_outgoing
@@ -508,14 +549,32 @@ struct VertexRelabelDetection : public GraphChiProgram<VertexDataType, EdgeDataT
                     new_combined_label += outgoing_label_in_combined;
                     
                     relabel_map_lock.lock();
-                    int label_map_label_combined = km->insert_relabel(new_combined_label);
+                    
+                    int label_map_label_combined;
+                    std::pair<std::map<std::string, int>::iterator, bool> rst_temp_combined;
+                    rst_temp_combined = reference_map.insert(std::pair<std::string, int>(new_combined_label, reference_map.size()));
+                    if (rst_temp_combined.second == false) {
+                        //logstream(LOG_INFO) << "Label " + new_combined_label + " is already in the map." << std::endl;
+                        label_map_label_combined = rst_temp_combined.first->second;
+                    } else {
+                        label_map_label_combined = reference_map.size();
+                    }
+                    
+                    
                     relabel_map_lock.unlock();
                     
                     label_map_lock.lock();
-                    km->insert_label(label_map_label_combined);
+                    
+                    std::pair<std::map<int, int>::iterator, bool> rst_insert;
+                    rst_insert = monitored.label_map.insert(std::pair<int, int>(label_map_label_combined, 1));
+                    if (rst_insert.second == false) {
+                        //logstream(LOG_INFO) << "Label is already in the map. Updating the value..." << std::endl;
+                        rst_insert.first->second++;
+                    }
+                    
                     label_map_lock.unlock();
                     vertex.set_data(label_map_label_combined);
-                    logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label_combined << std::endl;
+                    //logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label_combined << std::endl;
                 } else {//only takes incoming and outgoing vertex labels
                     std::vector<int> incoming_label_vec;
                     std::vector<int> outgoing_label_vec;
@@ -523,13 +582,13 @@ struct VertexRelabelDetection : public GraphChiProgram<VertexDataType, EdgeDataT
                         graphchi_edge<EdgeDataType> * in_edge = vertex.inedge(i);
                         int int_in_type = in_edge->get_data().old_src;
                         incoming_label_vec.push_back(int_in_type);
-                        logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
+                        //logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_in_type << " from in edges" << std::endl;
                     }
                     for (int i=0; i < vertex.num_outedges(); i++) {
                         graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
                         int int_out_type = out_edge->get_data().old_dst;
                         outgoing_label_vec.push_back(int_out_type);
-                        logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
+                        //logstream(LOG_INFO) << "Vertex " << vertex.id() << " getting " << int_out_type << " from out edges" << std::endl;
                     }
                     std::sort(incoming_label_vec.begin(), incoming_label_vec.end());
                     std::sort(outgoing_label_vec.begin(), outgoing_label_vec.end());
@@ -571,8 +630,28 @@ struct VertexRelabelDetection : public GraphChiProgram<VertexDataType, EdgeDataT
                     }
                     
                     relabel_map_lock.lock();
-                    int label_map_label_incoming = km->insert_relabel(new_incoming_label);
-                    int label_map_label_outgoing = km->insert_relabel(new_outgoing_label);
+                    
+                    int label_map_label_incoming;
+                    int label_map_label_outgoing;
+                    
+                    std::pair<std::map<std::string, int>::iterator, bool> rst_temp_incoming;
+                    rst_temp_incoming = reference_map.insert(std::pair<std::string, int>(new_incoming_label, reference_map.size()));
+                    if (rst_temp_incoming.second == false) {
+                        //logstream(LOG_INFO) << "Label " + new_incoming_label + " is already in the map." << std::endl;
+                        label_map_label_incoming = rst_temp_incoming.first->second;
+                    } else {
+                        label_map_label_incoming = reference_map.size();
+                    }
+                    
+                    std::pair<std::map<std::string, int>::iterator, bool> rst_temp_outgoing;
+                    rst_temp_outgoing = reference_map.insert(std::pair<std::string, int>(new_outgoing_label, reference_map.size()));
+                    if (rst_temp_outgoing.second == false) {
+                        //logstream(LOG_INFO) << "Label " + new_outgoing_label + " is already in the map." << std::endl;
+                        label_map_label_outgoing = rst_temp_outgoing.first->second;
+                    } else {
+                        label_map_label_outgoing = reference_map.size();
+                    }
+                    
                     relabel_map_lock.unlock();
                     
                     std::string new_combined_label = ""; //label_map_label_incoming,label_map_label_outgoing
@@ -589,14 +668,31 @@ struct VertexRelabelDetection : public GraphChiProgram<VertexDataType, EdgeDataT
                     new_combined_label += outgoing_label_in_combined;
                     
                     relabel_map_lock.lock();
-                    int label_map_label_combined = km->insert_relabel(new_combined_label);
+                    
+                    int label_map_label_combined;
+                    std::pair<std::map<std::string, int>::iterator, bool> rst_temp_combined;
+                    rst_temp_combined = reference_map.insert(std::pair<std::string, int>(new_combined_label, reference_map.size()));
+                    if (rst_temp_combined.second == false) {
+                        //logstream(LOG_INFO) << "Label " + new_combined_label + " is already in the map." << std::endl;
+                        label_map_label_combined = rst_temp_combined.first->second;
+                    } else {
+                        label_map_label_combined = reference_map.size();
+                    }
+                    
                     relabel_map_lock.unlock();
                     
                     label_map_lock.lock();
-                    km->insert_label(label_map_label_combined);
+                    
+                    std::pair<std::map<int, int>::iterator, bool> rst_insert;
+                    rst_insert = monitored.label_map.insert(std::pair<int, int>(label_map_label_combined, 1));
+                    if (rst_insert.second == false) {
+                        //logstream(LOG_INFO) << "Label is already in the map. Updating the value..." << std::endl;
+                        rst_insert.first->second++;
+                    }
+                    
                     label_map_lock.unlock();
                     vertex.set_data(label_map_label_combined);
-                    logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label_combined << std::endl;
+                    //logstream(LOG_INFO) << "The value of label " << vertex.id() << " is: " << label_map_label_combined << std::endl;
                 }
             }
             
@@ -623,14 +719,14 @@ struct VertexRelabelDetection : public GraphChiProgram<VertexDataType, EdgeDataT
                     type_label in_type = in_edge->get_data();
                     in_type.new_dst = label;
                     in_edge->set_data(in_type);
-                    logstream(LOG_INFO) << "Updated in edges of " << vertex.id() << " to " << in_type.old_dst << std::endl;
+                    //logstream(LOG_INFO) << "Updated in edges of " << vertex.id() << " to " << in_type.old_dst << std::endl;
                 }
                 for (int i=0; i < vertex.num_outedges(); i++) {
                     graphchi_edge<EdgeDataType> * out_edge = vertex.outedge(i);
                     type_label out_type = out_edge->get_data();
                     out_type.new_src = label;
                     out_edge->set_data(out_type);
-                    logstream(LOG_INFO) << "Updated out edges of " << vertex.id() << " to " << out_type.old_src << std::endl;
+                    //logstream(LOG_INFO) << "Updated out edges of " << vertex.id() << " to " << out_type.old_src << std::endl;
                 }
             }
             /* Scheduler myself for next iteration */

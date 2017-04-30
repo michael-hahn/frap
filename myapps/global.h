@@ -25,6 +25,14 @@ struct type_label {
 typedef int VertexDataType;
 typedef type_label EdgeDataType;//src_type dst_type edge_type
 
+struct monitor_profile {
+    std::vector<int> count_array;
+    std::map<int, int> label_map;
+};
+
+typedef monitor_profile monitor_profile;
+
+monitor_profile monitored;
 
 
 #endif /* global_h */

@@ -73,6 +73,9 @@ int main(int argc, const char ** argv) {
     /* Basic arguments for application */
     //First, we must know how many graphs will be used for computation:
     int num_graphs = get_option_int("ngraphs");
+    //This tells us how many instances are only part of the monitoring, not the learning
+    //Therefore the learning graphs would be (num_graphs - num_monitor)
+    int num_monitor = get_option_int("nmonitor");
     //We then use the for loop to get all the filenames, and store them in an array
     std::string filenames[num_graphs] = {};
     for (int i = 0; i < num_graphs; i++) {
@@ -85,7 +88,7 @@ int main(int argc, const char ** argv) {
     }
     
     //TODO: Make iterations dynamic based on convergence instead
-    int niters           = get_option_int("niters", 10); // Number of iterations
+    int niters           = get_option_int("niters", 4); // Number of iterations, or default of 4
     bool scheduler       = false;
     
     /* Detect the number of shards or preprocess an input to create them */
@@ -106,8 +109,8 @@ int main(int argc, const char ** argv) {
     
     pf.reset_arrays();
     
-    //Generate label maps of all instances
-    for (int i = 0; i < num_graphs; i++) {
+    //Generate label maps of all learning instances
+    for (int i = 0; i < num_graphs - num_monitor; i++) {
         km->insert_label_map();
         
         VertexRelabel program;
@@ -117,7 +120,7 @@ int main(int argc, const char ** argv) {
     
     //generate count arrays and put them in the profile
     std::vector<std::map<int, int>> label_maps = km->get_label_maps();
-    assert((int)label_maps.size() == num_graphs);
+    assert((int)label_maps.size() == num_graphs - num_monitor);
 
     for (std::vector<std::map<int, int>>::iterator it = label_maps.begin(); it != label_maps.end(); it++) {
         pf.add_array(km->generate_count_array(*it));
@@ -138,8 +141,8 @@ int main(int argc, const char ** argv) {
 //        std::cout << std::endl;
 //    }
     
-    for (int i = 0 ; i < num_graphs; i++) {
-        for (int j = 1; j < num_graphs - i; j++) {
+    for (int i = 0 ; i < num_graphs - num_monitor; i++) {
+        for (int j = 1; j < num_graphs - num_monitor - i; j++) {
             double distance = pf.calculate_distance(KULLBACKLEIBLER, count_arrays[i], count_arrays[i+j]);
             distance_matrix.push_back(distance);
         }
@@ -158,7 +161,7 @@ int main(int argc, const char ** argv) {
     //We cluster pair-wise distances
     //The number of cluster will be used as the value k when clustering distributions
     //This algorithm also helps to determine the inital centroid value to use
-    std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>> cluster_prior_results = kmeans_prior(num_graphs, distance_matrix);
+    std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>> cluster_prior_results = kmeans_prior(num_graphs - num_monitor, distance_matrix);
     std::vector<std::vector<int>> cluster_prior = cluster_prior_results.first;
     //prior_distance not used for now
     std::vector<std::vector<double>> prior_distance = cluster_prior_results.second;
@@ -185,9 +188,9 @@ int main(int argc, const char ** argv) {
         std::cout << "Prior Cluster: ";
         std::map<int, int> temp;
         for (std::vector<int>::iterator itr2 = itr->begin(); itr2 != itr->end(); itr2++) {
-            for (int x = 0; x < num_graphs - 1; x++) {
-                for (int y = 0; y < num_graphs - 1 - x; y++) {
-                    if ((((( (num_graphs - 1) + ( num_graphs - x )) * x ) / 2 ) + y ) == *itr2) {
+            for (int x = 0; x < num_graphs - num_monitor - 1; x++) {
+                for (int y = 0; y < num_graphs - num_monitor - 1 - x; y++) {
+                    if ((((( (num_graphs - num_monitor - 1) + ( num_graphs - num_monitor - x )) * x ) / 2 ) + y ) == *itr2) {
                         std::cout << x << "-" << x + 1 + y << " ";
                         std::pair<std::map<int,int>::iterator,bool> ret;
                         ret = temp.insert ( std::pair<int,int>(x,1) );
@@ -264,18 +267,18 @@ int main(int argc, const char ** argv) {
         std::cout << std::endl;
     }
     //for debugging: print out distances of each instance with its centroid in each cluster
-    for (std::vector<std::vector<double>>::iterator it = cluster_distances.begin(); it != cluster_distances.end(); it++) {
-        std::cout << "Cluster Distances: ";
-        for (std::vector<double>::iterator itr2 = it->begin(); itr2 != it->end(); itr2++) {
-            std::cout << *itr2 << " ";
-        }
-        std::cout << std::endl;
-    }
+//    for (std::vector<std::vector<double>>::iterator it = cluster_distances.begin(); it != cluster_distances.end(); it++) {
+//        std::cout << "Cluster Distances: ";
+//        for (std::vector<double>::iterator itr2 = it->begin(); itr2 != it->end(); itr2++) {
+//            std::cout << *itr2 << " ";
+//        }
+//        std::cout << std::endl;
+//    }
     
-    //the final number of clusters
+    //the final number of clusters, put final centroids and radius of the clusters in the profile
     int number_of_clusters = 0;
     for (size_t i = 0; i < cluster.size(); i++) {
-        if (cluster[i].size() > num_graphs * 0.2) {
+        if (cluster[i].size() > (num_graphs - num_monitor) * 0.2) {
             number_of_clusters++;
             pf.add_centroid(final_centroids[i]);
             double max_dis = 0.0;
@@ -295,13 +298,13 @@ int main(int argc, const char ** argv) {
     std::cout << "Final size of centroids:" << pf.get_centroids().size() << std::endl;
     std::cout << "Final size of distances:" << pf.get_distances().size() << std::endl;
     std::vector<std::vector<int>> profile_centroids = pf.get_centroids();
-    for (std::vector<std::vector<int>>::iterator it = profile_centroids.begin(); it != profile_centroids.end(); it++) {
-        std::cout << "Centroids: ";
-        for (std::vector<int>::iterator itr2 = it->begin(); itr2 != it->end(); itr2++) {
-            std::cout << *itr2 << " ";
-        }
-        std::cout << std::endl;
-    }
+//    for (std::vector<std::vector<int>>::iterator it = profile_centroids.begin(); it != profile_centroids.end(); it++) {
+//        std::cout << "Centroids: ";
+//        for (std::vector<int>::iterator itr2 = it->begin(); itr2 != it->end(); itr2++) {
+//            std::cout << *itr2 << " ";
+//        }
+//        std::cout << std::endl;
+//    }
     std::vector<double> profile_distances = pf.get_distances();
     std::cout << "Max distance of each cluster: ";
     for (std::vector<double>::iterator it = profile_distances.begin(); it != profile_distances.end(); it++) {
@@ -309,7 +312,44 @@ int main(int argc, const char ** argv) {
     }
     std::cout << std::endl;
     
-    
+    //Detection stage: Now use the kernelmap from the learning stage to get the count arrays of the monitoring instances
+    for (int i = 0; i < num_monitor; i++) {
+        VertexRelabelDetection program2;
+        graphchi_engine<VertexDataType, EdgeDataType> engine(filenames[num_graphs-num_monitor+i], nshards_arr[num_graphs-num_monitor+i], scheduler, m);
+        engine.run(program2, niters);
+        
+        monitored.count_array = km->generate_count_array(monitored.label_map);
+        
+        std::vector<double> monitor_distances;
+        //calculate distance between the monitored count array and the centroid
+        for (int i = 0 ; i < number_of_clusters; i++) {
+            double monitor_distance = pf.calculate_distance(KULLBACKLEIBLER, profile_centroids[i], monitored.count_array);
+            monitor_distances.push_back(monitor_distance);
+        }
+        
+        //debug only:
+        std::cout << "Distances of monitored instance: ";
+        for (size_t i = 0; i < monitor_distances.size(); i++) {
+            std::cout << monitor_distances[i] << " ";
+        }
+        std::cout << std::endl;
+        
+        //test if the monitored program belonged to any of the cluster (i.e., within the radius)
+        bool need_recluster = true;
+        for (size_t i = 0; i < monitor_distances.size(); i++) {
+            if (monitor_distances[i] < profile_distances[i]) {
+                need_recluster = false;
+            }
+        }
+        
+        if (!need_recluster)
+            std::cout << "This monitored instance is normal..." << std::endl;
+        else
+            std::cout << "This monitored instance is outside the radius of any cluster... Recluster now..." << std::endl;
+        
+        monitored.count_array.clear();
+        monitored.label_map.clear();
+    }
     
     //this map the vector cluster_temps
     //if instance 0 has 3 in cluster 0 and 4 in cluster 1 the map entry will be 0 -> [<0, 3> <1, 4>]
