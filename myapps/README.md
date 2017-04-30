@@ -54,17 +54,24 @@ At `graph-chi` directory, run:
 
 and then use the following command to run the application:
 
-`bin/myapps/main ngraphs <num_of_graphs> file0 <file_name> file1 <file_name> ...  niters <iteration_time>`
+`bin/myapps/main ngraphs <num_of_graphs> nmonitor <num_of_graphs> file0 <file_name> file1 <file_name> ...  niters <iteration_time>`
+
+* `ngraphs` should be total number of graphs, including the graphs from the learning stage and the ones from the detecting stage
+
+* `nmonitor` should be the number of provenance DAGs being monitored only
+
+* files being monitored should be at the end of the list of files. For example, if we have 3 learning DAGs and 1 monitored one, the command should be:
+`bin/myapps/main ngraphs 4 nmonitor 1 file0 <file_name> file1 <file_name> file2 <file_name> file3 <file_name>`
 
 ##### Experiment Results 
 
 We run the following command:
 
-`bin/myapps/main ngraphs 18 file0 myapps/server/edgeList1.txt file1 myapps/server/edgeList2.txt file2 myapps/server/edgeList3.txt file3 myapps/server/edgeList4.txt file4 myapps/server/edgeList5.txt file5 myapps/server/edgeList6.txt file6 myapps/server/edgeList7.txt file7 myapps/server/edgeList8.txt file8 myapps/server/edgeList9.txt file9 myapps/server/edgeList_bad.txt file10 myapps/dataset1/edgeList1.txt file11 myapps/dataset1/edgeList2.txt file12 myapps/dataset1/edgeList3.txt file13 myapps/dataset1/edgeList4.txt file14 myapps/dataset1/edgeList5.txt file15 myapps/dataset1/edgeList6.txt file16 myapps/dataset1/edgeList7.txt file17 myapps/dataset1/edgeList_bad.txt niters 4`
+`bin/myapps/main ngraphs 19 nmonitor 1 file0 myapps/server/edgeList1.txt file1 myapps/server/edgeList2.txt file2 myapps/server/edgeList3.txt file3 myapps/server/edgeList4.txt file4 myapps/server/edgeList5.txt file5 myapps/server/edgeList6.txt file6 myapps/server/edgeList7.txt file7 myapps/server/edgeList8.txt file8 myapps/server/edgeList9.txt file9 myapps/server/edgeList_bad.txt file10 myapps/dataset1/edgeList1.txt file11 myapps/dataset1/edgeList2.txt file12 myapps/dataset1/edgeList3.txt file13 myapps/dataset1/edgeList4.txt file14 myapps/dataset1/edgeList5.txt file15 myapps/dataset1/edgeList6.txt file16 myapps/dataset1/edgeList7.txt file17 myapps/dataset1/edgeList_bad.txt file18 myapps/dataset1/edgeList8.txt niters 4`
 
 (Use Kullback-Leibler distance metric)
 
-* Explanation: file 0 - 8 are one normal program behavior; file 10 - 16 are another normal program behavior; file 9 and 17 are two different abnormal program behavior
+* Explanation: file 0 - 8 are one normal program behavior; file 10 - 16 are another normal program behavior; file 9 and 17 are two different abnormal program behavior and file 18 is the file to be monitored
 
 * The results of `kmeans_prior` (by clustering pairwise distances as prior):
 ```
@@ -101,6 +108,23 @@ Cluster: 17
 Cluster: 
 ```
 Therefore, our prior algorithm (i.e., clustering KL distances) overestimate the number of clusters.
+
+FRAP identifies 9 and 17 as bad instances to learn and only generate 2 clusters as its profile. It also records the centroid and the radius of each cluster for later detecting stage.
+
+The profile has the following information:
+```
+Final number of clusters:2
+Final size of centroids:2
+Final size of distances:2
+Max distance of each cluster: 1.97949 0.714156
+```
+During the detecting stage, FRAP analyzes the DAG of file 18, generating its count array using the relablling map from the learning stage, and comparing the count array with the two centroids of the clusters. It calculates the distance between this feature vector and the two centroid. The results are:
+
+`Distances of monitored instance: 4.86445 0.525388`
+
+Since file 18 is actually a well behaved instance that displays the second normal program behavior, it can be cluster to the second cluster; therefore, FRAP concludes:
+
+`This monitored instance is normal...`
 
 * We remove the empty clutser, record the centroid of each cluster and its radius of the cluster
 
