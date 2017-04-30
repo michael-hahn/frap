@@ -105,7 +105,6 @@ int main(int argc, const char ** argv) {
     profile pf;
     
     pf.reset_arrays();
-    pf.reset_map();
     
     //Generate label maps of all instances
     for (int i = 0; i < num_graphs; i++) {
@@ -147,25 +146,43 @@ int main(int argc, const char ** argv) {
     }
     
     //print out distance matrix
-    std::cout << "Distance matrix: ";
-    for (std::vector<double>::iterator itr = distance_matrix.begin(); itr != distance_matrix.end(); itr++) {
-        std::cout << *itr << " ";
-    }
-    std::cout << std::endl;
+//    std::cout << "Distance matrix: ";
+//    for (std::vector<double>::iterator itr = distance_matrix.begin(); itr != distance_matrix.end(); itr++) {
+//        std::cout << *itr << " ";
+//    }
+//    std::cout << std::endl;
     
     //kmean clustering to detect outliers and to form clusters
     //if many instances do not fit into a cluster, then we can create multiple clusters to encapsulate many normal behaviors that are quite divergent
-    std::vector<std::vector<int>> cluster = kmean(num_graphs, distance_matrix);
+    //Before apply kmeans, we have a kmean-prior algorithm that helps determine the optimal cluster size when clustering distribution
+    //We cluster pair-wise distances
+    //The number of cluster will be used as the value k when clustering distributions
+    //This algorithm also helps to determine the inital centroid value to use
+    std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>> cluster_prior_results = kmeans_prior(num_graphs, distance_matrix);
+    std::vector<std::vector<int>> cluster_prior = cluster_prior_results.first;
+    //prior_distance not used for now
+    std::vector<std::vector<double>> prior_distance = cluster_prior_results.second;
+    
+    //obtain the value of k for later clustering of distributions
+    int total_number_of_valid_clusters_estimate = 0;
+    for (std::vector<std::vector<int>>::iterator itr = cluster_prior.begin(); itr != cluster_prior.end(); itr++) {
+        if (itr->size() > 0)
+            total_number_of_valid_clusters_estimate++;
+    }
+    std::cout << "# of Clusters (estimate):" << total_number_of_valid_clusters_estimate << std::endl;
+ 
+    //Initialize a vector that will hold the instance IDs of the ones that will be the initial centroild of the clustering of distributions
+    std::vector<int> cluster_ids;
     
     //print out the cluster:
     //format: graph_x - graph_y
     
-    //this vector contains for each clutser the instance that appears and the number of distance value of that instance
+    //this vector contains for each cluster the instance that appears and the number of distance value of that instance
     //e.g. if cluster 0 has 1-0 1-2 1-4, then we have [(1 -> 3, 2 -> 1, 4 -> 1), <other_maps>]
     std::vector<std::map<int, int>> cluster_temps;
     
-    for (std::vector<std::vector<int>>::iterator itr = cluster.begin(); itr != cluster.end(); itr++) {
-        std::cout << "Cluster: ";
+    for (std::vector<std::vector<int>>::iterator itr = cluster_prior.begin(); itr != cluster_prior.end(); itr++) {
+        std::cout << "Prior Cluster: ";
         std::map<int, int> temp;
         for (std::vector<int>::iterator itr2 = itr->begin(); itr2 != itr->end(); itr2++) {
             for (int x = 0; x < num_graphs - 1; x++) {
@@ -189,7 +206,8 @@ int main(int argc, const char ** argv) {
         std::cout << std::endl;
         cluster_temps.push_back(temp);
     }
-    //for debugging; print cluster_temps
+    
+    //for debugging: print cluster_temps
 //    std::cout << std::endl;
 //    for (size_t i = 0; i < cluster_temps.size(); i++) {
 //        for (std::map<int, int>::iterator it = cluster_temps[i].begin(); it != cluster_temps[i].end(); it++) {
@@ -198,20 +216,116 @@ int main(int argc, const char ** argv) {
 //        std::cout << std::endl;
 //    }
     
-    //this map the vector cluster_temps
-    //if instance 0 has 3 in cluster 0 and 4 in cluster 1 the map entry will be 0 -> [<0, 3> <1, 4>]
-    std::map<int, std::vector<std::pair<int, int>>> instance_temp;
-    for (int i = 0; i < (int) cluster_temps.size(); i++) {
-        for (std::map<int, int>::iterator itr = cluster_temps[i].begin(); itr != cluster_temps[i].end(); itr++) {
-            std::pair<std::map<int, std::vector<std::pair<int, int>>>::iterator,bool> ret;
-            std::vector<std::pair<int, int>> start_vec;
-            start_vec.push_back(std::pair<int, int>(i, itr->second));
-            ret = instance_temp.insert ( std::pair<int,std::vector<std::pair<int, int>>>(itr->first, start_vec) );
-            if (ret.second==false) {
-                ret.first->second.push_back(std::pair<int, int>(i, itr->second));
+    for (size_t i = 0; i < cluster_temps.size(); i++) {
+        if (cluster_temps[i].size() > 0) {
+            int id = -1;
+            int max_occur = -1;
+            for (std::map<int, int>::iterator it = cluster_temps[i].begin(); it != cluster_temps[i].end(); it++) {
+                if (it->second > max_occur) {
+                    max_occur = it->second;
+                    id = it->first;
+                }
             }
+            assert (id >= 0);
+            assert (max_occur > 0);
+            cluster_ids.push_back(id);
         }
     }
+    
+    //for debugging: print cluster_ids
+//    for (size_t i = 0; i < cluster_ids.size(); i++) {
+//        std::cout << cluster_ids[i] << "..";
+//    }
+//    std::cout << std::endl;
+    
+    //this is the centroids of all the clusters in the profile
+    std::vector<std::vector<int>> final_centroids;
+
+    std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>> cluster_results = kmeans(total_number_of_valid_clusters_estimate, cluster_ids, count_arrays, final_centroids);
+    
+    //for debugging: print the centroids of the results:
+//    for (std::vector<std::vector<int>>::iterator it = final_centroids.begin(); it != final_centroids.end(); it++) {
+//        std::cout << "Centroids:" << std::endl;
+//        for (std::vector<int>::iterator itr2 = it->begin(); itr2 != it->end(); itr2++) {
+//            std::cout << *itr2 << " ";
+//        }
+//        std::cout << std::endl;
+//    }
+    
+    std::vector<std::vector<int>> cluster = cluster_results.first;
+    std::vector<std::vector<double>> cluster_distances = cluster_results.second;
+    
+    //for debugging: print out elements in a cluster
+    for (std::vector<std::vector<int>>::iterator it = cluster.begin(); it != cluster.end(); it++) {
+        std::cout << "Cluster: ";
+        for (std::vector<int>::iterator itr2 = it->begin(); itr2 != it->end(); itr2++) {
+            std::cout << *itr2 << " ";
+        }
+        std::cout << std::endl;
+    }
+    //for debugging: print out distances of each instance with its centroid in each cluster
+    for (std::vector<std::vector<double>>::iterator it = cluster_distances.begin(); it != cluster_distances.end(); it++) {
+        std::cout << "Cluster Distances: ";
+        for (std::vector<double>::iterator itr2 = it->begin(); itr2 != it->end(); itr2++) {
+            std::cout << *itr2 << " ";
+        }
+        std::cout << std::endl;
+    }
+    
+    //the final number of clusters
+    int number_of_clusters = 0;
+    for (size_t i = 0; i < cluster.size(); i++) {
+        if (cluster[i].size() > num_graphs * 0.2) {
+            number_of_clusters++;
+            pf.add_centroid(final_centroids[i]);
+            double max_dis = 0.0;
+            for (std::vector<double>::iterator it = cluster_distances[i].begin(); it != cluster_distances[i].end(); it++) {
+                if (*it > max_dis)
+                    max_dis = *it;
+            }
+            pf.add_max_distance_from_centroid(max_dis);
+        }
+    }
+    
+    assert(number_of_clusters > 0);
+    assert(number_of_clusters == (int)pf.get_centroids().size());
+    assert(number_of_clusters == (int)pf.get_distances().size());
+    //for debugging, print out final number of clusters, max distance and centroids
+    std::cout << "Final number of clusters:" << number_of_clusters << std::endl;
+    std::cout << "Final size of centroids:" << pf.get_centroids().size() << std::endl;
+    std::cout << "Final size of distances:" << pf.get_distances().size() << std::endl;
+    std::vector<std::vector<int>> profile_centroids = pf.get_centroids();
+    for (std::vector<std::vector<int>>::iterator it = profile_centroids.begin(); it != profile_centroids.end(); it++) {
+        std::cout << "Centroids: ";
+        for (std::vector<int>::iterator itr2 = it->begin(); itr2 != it->end(); itr2++) {
+            std::cout << *itr2 << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::vector<double> profile_distances = pf.get_distances();
+    std::cout << "Max distance of each cluster: ";
+    for (std::vector<double>::iterator it = profile_distances.begin(); it != profile_distances.end(); it++) {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+    
+    
+    
+    //this map the vector cluster_temps
+    //if instance 0 has 3 in cluster 0 and 4 in cluster 1 the map entry will be 0 -> [<0, 3> <1, 4>]
+//    std::map<int, std::vector<std::pair<int, int>>> instance_temp;
+//    for (int i = 0; i < (int) cluster_temps.size(); i++) {
+//        for (std::map<int, int>::iterator itr = cluster_temps[i].begin(); itr != cluster_temps[i].end(); itr++) {
+//            std::pair<std::map<int, std::vector<std::pair<int, int>>>::iterator,bool> ret;
+//            std::vector<std::pair<int, int>> start_vec;
+//            start_vec.push_back(std::pair<int, int>(i, itr->second));
+//            ret = instance_temp.insert ( std::pair<int,std::vector<std::pair<int, int>>>(itr->first, start_vec) );
+//            if (ret.second==false) {
+//                ret.first->second.push_back(std::pair<int, int>(i, itr->second));
+//            }
+//        }
+//    }
+    
     //for debugging; print instance_temp
 //    for (std::map<int, std::vector<std::pair<int, int>>>::iterator it = instance_temp.begin(); it != instance_temp.end(); it++) {
 //        std::cout << it->first << ":";
@@ -220,56 +334,58 @@ int main(int argc, const char ** argv) {
 //        }
 //        std::cout << std::endl;
 //    }
-    
+ 
     //this map shows what instance belongs to what group
-    std::map<int, int> instance_belongs;
-    for (std::map<int, std::vector<std::pair<int, int>>>::iterator it = instance_temp.begin(); it != instance_temp.end(); it++) {
-        int max_clutser_population = 0;
-        int instance_goes_to = -1;
-        for (std::vector<std::pair<int, int>>::iterator itr = it->second.begin(); itr != it->second.end(); itr++) {
-            if (itr->second >= max_clutser_population) {
-                max_clutser_population = itr->second;
-                instance_goes_to = itr->first;
-            }
-        }
-        assert (instance_goes_to >= 0);
-        instance_belongs.insert(std::pair<int, int>(it->first, instance_goes_to));
-    }
-    //for debugging: print instance_belongs;
+//    std::map<int, int> instance_belongs;
+//    for (std::map<int, std::vector<std::pair<int, int>>>::iterator it = instance_temp.begin(); it != instance_temp.end(); it++) {
+//        int max_clutser_population = 0;
+//        int instance_goes_to = -1;
+//        for (std::vector<std::pair<int, int>>::iterator itr = it->second.begin(); itr != it->second.end(); itr++) {
+//            if (itr->second >= max_clutser_population) {
+//                max_clutser_population = itr->second;
+//                instance_goes_to = itr->first;
+//            }
+//        }
+//        assert (instance_goes_to >= 0);
+//        instance_belongs.insert(std::pair<int, int>(it->first, instance_goes_to));
+//    }
+//    //for debugging: print instance_belongs;
+//    std::cout << "InstanceID -> ClusterID" << std::endl;
 //    for (std::map<int, int>::iterator it = instance_belongs.begin(); it != instance_belongs.end(); it++) {
 //        std::cout << it->first << "->" << it->second << std::endl;
 //    }
     
     //cluster_id -> # of instances in this cluster
-    std::map<int, int> cluster_has_instance_number;
-    for (std::map<int, int>::iterator it = instance_belongs.begin(); it != instance_belongs.end(); it++) {
-        std::pair<std::map<int,int>::iterator,bool> ret;
-        ret = cluster_has_instance_number.insert ( std::pair<int,int>(it->second,1) );
-        if (ret.second==false) {
-            ret.first->second++;
-        }
-    }
+//    std::map<int, int> cluster_has_instance_number;
+//    for (std::map<int, int>::iterator it = instance_belongs.begin(); it != instance_belongs.end(); it++) {
+//        std::pair<std::map<int,int>::iterator,bool> ret;
+//        ret = cluster_has_instance_number.insert ( std::pair<int,int>(it->second,1) );
+//        if (ret.second==false) {
+//            ret.first->second++;
+//        }
+//    }
     //for debugging: print cluster_has_instance_number
 //    for (std::map<int, int>::iterator it = cluster_has_instance_number.begin(); it != cluster_has_instance_number.end(); it++) {
 //        std::cout << it->first << "->" << it->second << std::endl;
 //    }
     
     //bad_cluster has all cluster numbers that contain bad instances
-    std::vector<int> bad_cluster;
-    for (std::map<int, int>::iterator it = cluster_has_instance_number.begin(); it != cluster_has_instance_number.end(); it++) {
-        if ((double)it->second < num_graphs * 0.15) {
-            //std::cout << it->first << std::endl;
-            bad_cluster.push_back(it->first);
-        }
-    }
+//    std::vector<int> bad_cluster;
+//    for (std::map<int, int>::iterator it = cluster_has_instance_number.begin(); it != cluster_has_instance_number.end(); it++) {
+//        if ((double)it->second < num_graphs * 0.15) {
+//            //std::cout << it->first << std::endl;
+//            bad_cluster.push_back(it->first);
+//        }
+//    }
     
-    for (std::vector<int>::iterator it = bad_cluster.begin(); it != bad_cluster.end(); it++) {
-        for (std::map<int, int>::iterator itr = instance_belongs.begin(); itr != instance_belongs.end(); itr++) {
-            if (itr->second == *it) {
-                std::cout << itr->first << std::endl;
-            }
-        }
-    }
+    
+//    for (std::vector<int>::iterator it = bad_cluster.begin(); it != bad_cluster.end(); it++) {
+//        for (std::map<int, int>::iterator itr = instance_belongs.begin(); itr != instance_belongs.end(); itr++) {
+//            if (itr->second == *it) {
+//                std::cout << itr->first << std::endl;
+//            }
+//        }
+//    }
     
     
     

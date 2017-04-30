@@ -61,24 +61,69 @@ double mean(std::vector<double> vec) {
     else return sum / vec.size();
 }
 
+double calculate_distance2(int method, std::vector<int> count_array1, std::vector<int> count_array2) {
+    double distance = 0;
+    if (method == 0) {//symmetric kullback-leibler divergence
+        std::vector<double> count_distribution_1 = count_distribution(count_array1, true);
+        std::vector<double> count_distribution_2 = count_distribution(count_array2, true);
+        assert(count_distribution_1.size() == count_distribution_2.size());
+        
+        std::vector<double>::iterator itr_1 = count_distribution_1.begin();
+        std::vector<double>::iterator itr_2 = count_distribution_2.begin();
+        while (itr_1 != count_distribution_1.end()) {
+            distance += (*itr_1 - *itr_2) * log(*itr_1 / *itr_2);
+            itr_1++;
+            itr_2++;
+        }
+    }
+    if (method == 1) {//hellinger distance
+        std::vector<double> count_distribution_1 = count_distribution(count_array1, false);
+        std::vector<double> count_distribution_2 = count_distribution(count_array2, false);
+        assert(count_distribution_1.size() == count_distribution_2.size());
+        
+        std::vector<double>::iterator itr_1 = count_distribution_1.begin();
+        std::vector<double>::iterator itr_2 = count_distribution_2.begin();
+        while (itr_1 != count_distribution_1.end()) {
+            distance += (sqrt(*itr_1) - sqrt(*itr_2)) * (sqrt(*itr_1) - sqrt(*itr_2));
+            itr_1++;
+            itr_2++;
+        }
+        distance = sqrt(distance) / sqrt(2);
+    }
+    if (method == 2) {//euclidian distance
+        assert(count_array1.size() == count_array2.size());
+        std::vector<int>::iterator itr_1 = count_array1.begin();
+        std::vector<int>::iterator itr_2 = count_array2.begin();
+        while (itr_1 != count_array1.end()) {
+            distance += (*itr_1 - *itr_2) * (*itr_1 - *itr_2);
+            itr_1++;
+            itr_2++;
+        }
+        distance = sqrt(distance);
+    }
+    return distance;
+}
+
 //k-mean clustering
 //cluster indices
 //k: number of cluster
 
-std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) {
+std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>> kmeans_prior(int k, std::vector<double> distance_matrix) {
     int matrix_size = distance_matrix.size();
     double cluster[k];
     double newCluster[k];
     double group[k][matrix_size];
     std::vector<double> newGroup[k];
     std::vector<std::vector<int>> rtn;
+    std::vector<std::vector<double>> rtn_distance;
     bool converge = true;
 
     for (int i = 0; i < k; i++) {
         std::vector<int> vec;
+        std::vector<double> dis;
         rtn.push_back(vec);
+        rtn_distance.push_back(dis);
 
-        // BAD, might be putting two clusters in the same place.
         cluster[i] = distance_matrix[rand() % matrix_size];
         newCluster[i] = 0.0;
     }
@@ -102,6 +147,7 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
                 }
             }
             rtn[groupNum].push_back(i);
+            rtn_distance[groupNum].push_back(min);
             newGroup[groupNum].push_back(distance_matrix[i]);
         }
 
@@ -128,6 +174,7 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
             for (int d = 0; d < k; d++) {
                 cluster[d] = newCluster[d];
                 rtn[d].clear();
+                rtn_distance[d].clear();
                 newGroup[d].clear();
             }
         }
@@ -140,34 +187,37 @@ std::vector<std::vector<int>> kmean(int k, std::vector<double> distance_matrix) 
 
     } while (!converge);
 
-    return rtn;
+    return std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>>(rtn, rtn_distance);
 }
 
-std::vector<std::vector<int>> kmean(int k, std::vector<std::vector<int>> count_array) {
+std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>> kmeans(int k, std::vector<int>seeds, std::vector<std::vector<int>> count_array, std::vector<std::vector<int>>& centroids) {
     int nvec = count_array.size();
     int array_size = count_array[0].size();
 
-    double cluster[k][array_size];
-    double newCluster[k][array_size];
+    std::vector<int> cluster[k];
+    std::vector<int> newCluster[k];
     double group[k][nvec];
 
-    std::vector<std::vector<double>> newGroup[k];
+    std::vector<std::vector<int>> newGroup[k];
     std::vector<std::vector<int>> rtn;  // Final variable to return
+    std::vector<std::vector<double>> rtn_distance;
 
 
     bool converge = true;
 
-    //Initialise rtn
+    //Initialize rtn
 
     for (int i = 0; i < k; i++) {
         std::vector<int> vec;
+        std::vector<double> dis;
         rtn.push_back(vec);
+        rtn_distance.push_back(dis);
 
-        // BAD, might be putting two clusters in the same place.
-        //cluster[i] = distance_matrix[rand() % matrix_size];
-        std::vector<double> temp (array_size,0);
-        cluster[i] = count_array[rand() % nvec];
-        newCluster[i] = temp;
+        std::vector<int> temp (array_size,0);
+        for (int ii = 0; ii < array_size; ii++) {
+            cluster[i].push_back(count_array[seeds[i]][ii]);
+            newCluster[i].push_back(count_array[seeds[i]][ii]);
+        }
     }
 
     // Calculate distance to each cluster
@@ -176,7 +226,7 @@ std::vector<std::vector<int>> kmean(int k, std::vector<std::vector<int>> count_a
         for (int i = 0; i < k; i++) {
             int j = 0;
             for (std::vector<std::vector<int>>::iterator itr = count_array.begin(); itr != count_array.end(); itr++) {
-                group[i][j] = calculate_distance(0, *itr, cluster[i]);  // distance of j-th entry to i-th cluster
+                group[i][j] = calculate_distance2(0, *itr, cluster[i]);  // distance of j-th entry to i-th cluster
                 j++;
             }
         }
@@ -191,22 +241,25 @@ std::vector<std::vector<int>> kmean(int k, std::vector<std::vector<int>> count_a
                 }
             }
             rtn[groupNum].push_back(i);
+            rtn_distance[groupNum].push_back(min);
             newGroup[groupNum].push_back(count_array[i]);
         }
 
         for (int q = 0; q < k; q++) {
-          std::vector<double> sum(array_size,0);
-          for (std::vector<std::vector<double>>::iterator it = newGroup[q].begin(); it != newGroup[q].end(); it++) {
-            for(int f = 0; f < array_size; f++) {
-              sum[f] += *it;
+            if (newGroup[q].size() != 0) {
+              std::vector<int> sum(array_size,0);
+              for (std::vector<std::vector<int>>::iterator it = newGroup[q].begin(); it != newGroup[q].end(); it++) {
+                for(int f = 0; f < array_size; f++) {
+                  sum[f] += (*it)[f];
+                }
+              }
+              for(int g = 0; g < array_size; g++) {
+                sum[g] /= newGroup[q].size();
+              }
+              for (int d = 0; d < array_size; d++) {
+                newCluster[q][d] = sum[d];// calculate mean of distribution for a cluster
+              }
             }
-          }
-          for(int g = 0; g < array_size; g++) {
-            sum[g] /= newGroup[q].size();
-          }
-          for (int d = 0; d < array_size; d++) {
-            newCluster[q][d] = sum[d];// calculate mean of distribution for a cluster
-          }
         }
 
         for (int t = 0; t < k; t++) {
@@ -230,7 +283,12 @@ std::vector<std::vector<int>> kmean(int k, std::vector<std::vector<int>> count_a
             for (int d = 0; d < k; d++) {
                 cluster[d] = newCluster[d];
                 rtn[d].clear();
+                rtn_distance[d].clear();
                 newGroup[d].clear();
+            }
+        } else {
+            for (int t = 0; t < k; t++) {
+                centroids.push_back(newCluster[t]);
             }
         }
 
@@ -241,6 +299,7 @@ std::vector<std::vector<int>> kmean(int k, std::vector<std::vector<int>> count_a
         //        std:: cout << std::endl;
 
     } while (!converge);
+    
 
-    return rtn;
+    return std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>>(rtn, rtn_distance);
 }
