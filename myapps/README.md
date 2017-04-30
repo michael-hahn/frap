@@ -100,6 +100,9 @@ Cluster: 9
 Cluster: 17 
 Cluster: 
 ```
+Therefore, our prior algorithm (i.e., clustering KL distances) overestimate the number of clusters.
+
+* We remove the empty clutser, record the centroid of each cluster and its radius of the cluster
 
 * Our clustering and analysis algorithm can find abnormal program run: 9 and 17
 
