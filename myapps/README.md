@@ -60,31 +60,49 @@ and then use the following command to run the application:
 
 We run the following command:
 
-`bin/myapps/main ngraphs 15 file0 myapps/server/edgeList1.txt file1 myapps/server/edgeList2.txt file2 myapps/server/edgeList3.txt file3 myapps/server/edgeList4.txt file4 myapps/server/edgeList5.txt file5 myapps/server/edgeList6.txt file6 myapps/server/edgeList7.txt file7 myapps/server/edgeList8.txt file8 myapps/server/edgeList9.txt file9 myapps/server/edgeList_bad.txt file10 myapps/dataset1/edgeList1.txt file11 myapps/dataset1/edgeList2.txt file12 myapps/dataset1/edgeList3.txt file13 myapps/dataset1/edgeList4.txt file14 myapps/dataset1/edgeList_bad.txt niters 4`
+`bin/myapps/main ngraphs 18 file0 myapps/server/edgeList1.txt file1 myapps/server/edgeList2.txt file2 myapps/server/edgeList3.txt file3 myapps/server/edgeList4.txt file4 myapps/server/edgeList5.txt file5 myapps/server/edgeList6.txt file6 myapps/server/edgeList7.txt file7 myapps/server/edgeList8.txt file8 myapps/server/edgeList9.txt file9 myapps/server/edgeList_bad.txt file10 myapps/dataset1/edgeList1.txt file11 myapps/dataset1/edgeList2.txt file12 myapps/dataset1/edgeList3.txt file13 myapps/dataset1/edgeList4.txt file14 myapps/dataset1/edgeList5.txt file15 myapps/dataset1/edgeList6.txt file16 myapps/dataset1/edgeList7.txt file17 myapps/dataset1/edgeList_bad.txt niters 4`
 
 (Use Kullback-Leibler distance metric)
 
-* Explanation: file 0 - 8 are one normal program behavior; file 10 - 13 are another normal program behavior; file 9 and 14 are two different abnormal progrma behavior
+* Explanation: file 0 - 8 are one normal program behavior; file 10 - 16 are another normal program behavior; file 9 and 17 are two different abnormal program behavior
 
-* The results (by clustering pairwise distances):
+* The results of `kmeans_prior` (by clustering pairwise distances as prior):
 ```
-Cluster: 0-1 0-2 0-3 0-4 0-5 0-7 0-8 1-2 1-3 1-4 1-5 1-6 1-7 1-8 2-3 2-4 2-5 2-6 2-7 2-8 3-4 3-5 3-6 3-7 3-8 4-5 4-6 4-7 4-8 5-7 5-8 6-7 6-8 7-8 10-12 10-13 11-12 11-13 
-Cluster: 0-14 1-14 2-14 3-14 4-14 6-14 7-14 8-14 
-Cluster: 0-10 0-11 0-12 0-13 1-10 1-11 1-12 1-13 2-10 2-11 2-12 2-13 3-10 3-11 3-12 3-13 4-10 4-11 4-12 4-13 5-10 5-11 5-12 5-13 6-10 6-11 6-12 6-13 7-10 7-11 7-12 7-13 8-10 8-11 8-12 8-13 9-10 9-11 9-12 9-13 10-14 11-14 13-14 
-Cluster: 5-14 
-Cluster: 0-9 1-9 2-9 3-9 4-9 5-6 5-9 6-9 7-9 8-9 12-14 
-Cluster: 10-11 12-13 
-Cluster: 
-Cluster: 0-6 
-Cluster: 
-Cluster: 
-Cluster: 9-14 
-Cluster: 
-Cluster: 
-Cluster: 
+Prior Cluster: 0-1 0-2 0-3 0-4 0-5 0-7 0-8 1-2 1-3 1-4 1-6 1-7 1-8 2-3 2-4 2-6 2-7 2-8 3-4 3-5 3-7 3-8 4-5 4-6 4-7 4-8 5-7 5-8 7-8 10-11 10-12 10-13 10-14 10-15 10-16 11-12 11-13 11-14 11-15 11-16 12-13 12-14 12-15 12-16 13-14 13-15 13-16 14-15 14-16 15-16 
+Prior Cluster: 0-10 0-11 0-12 0-13 0-14 0-15 0-16 1-10 1-11 1-12 1-13 1-14 1-15 1-16 2-10 2-11 2-12 2-13 2-14 2-15 2-16 3-10 3-11 3-12 3-13 3-14 3-15 3-16 4-10 4-11 4-12 4-13 4-14 4-15 4-16 5-10 5-11 5-12 5-13 5-14 5-15 5-16 6-10 6-11 6-12 6-13 6-14 6-15 6-16 7-10 7-11 7-12 7-13 7-14 7-15 7-16 8-10 8-11 8-12 8-13 8-14 8-15 8-16 9-10 9-11 9-12 9-13 9-14 9-15 9-16 9-17 10-17 11-17 13-17 15-17 
+Prior Cluster: 0-6 0-9 1-5 1-9 2-5 2-9 3-6 3-9 4-9 5-6 6-7 6-8 6-9 7-9 8-9 
+Prior Cluster: 
+Prior Cluster: 
+Prior Cluster: 0-17 1-17 2-17 3-17 4-17 5-17 6-17 7-17 8-17 
+Prior Cluster: 
+Prior Cluster: 
+Prior Cluster: 
+Prior Cluster: 
+Prior Cluster: 
+Prior Cluster: 5-9 12-17 14-17 16-17 
+Prior Cluster: 
+Prior Cluster: 
+Prior Cluster: 
+Prior Cluster: 
+Prior Cluster: 
+Prior Cluster:  
+```
+
+We find 5 populated clusters. We can set 
+`K = 5`
+when clustering feature vectors (calling function `kmeans`). 
+
+* The results of `kmeans` (by clustering feature vectors/instances using K = 5):
+```
+Cluster: 0 1 2 3 4 5 6 7 8 
+Cluster: 10 11 12 13 14 15 16 
+Cluster: 9 
+Cluster: 17 
 Cluster: 
 ```
-* Our clustering and analysis algorithm can find abnormal program run: 9 and 14
+
+* Our clustering and analysis algorithm can find abnormal program run: 9 and 17
+
 #### Make file in `myapps` directory:
 
 This `Makefile` is to make jsonparser application.
