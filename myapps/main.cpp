@@ -337,7 +337,7 @@ int main(int argc, const char ** argv) {
         //test if the monitored program belonged to any of the cluster (i.e., within the radius)
         bool need_recluster = true;
         for (size_t i = 0; i < monitor_distances.size(); i++) {
-            if (monitor_distances[i] < profile_distances[i]) {
+            if (monitor_distances[i] <= profile_distances[i]) {
                 need_recluster = false;
             }
         }
