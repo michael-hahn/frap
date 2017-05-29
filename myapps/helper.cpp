@@ -303,3 +303,111 @@ std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>> kmean
 
     return std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>>(rtn, rtn_distance);
 }
+
+std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>> kmeans_monitor(int k, std::vector<std::vector<int>> count_array, std::vector<std::vector<int>> centroids) {
+    int nvec = count_array.size();
+    int array_size = count_array[0].size();
+    
+    std::vector<int> cluster[k];
+    std::vector<int> newCluster[k];
+    double group[k][nvec];
+    
+    std::vector<std::vector<int>> newGroup[k];
+    std::vector<std::vector<int>> rtn;  // Final variable to return
+    std::vector<std::vector<double>> rtn_distance;
+    
+    
+    bool converge = true;
+    
+    //Initialize rtn
+    
+    for (int i = 0; i < k; i++) {
+        std::vector<int> vec;
+        std::vector<double> dis;
+        rtn.push_back(vec);
+        rtn_distance.push_back(dis);
+        
+        for (int ii = 0; ii < array_size; ii++) {
+            cluster[i].push_back(centroids[i][ii]);
+            newCluster[i].push_back(centroids[i][ii]);
+        }
+    }
+    
+    // Calculate distance to each cluster
+    do {
+        converge = true;
+        for (int i = 0; i < k; i++) {
+            int j = 0;
+            for (std::vector<std::vector<int>>::iterator itr = count_array.begin(); itr != count_array.end(); itr++) {
+                group[i][j] = calculate_distance2(0, *itr, cluster[i]);  // distance of j-th entry to i-th cluster
+                j++;
+            }
+        }
+        
+        for (int i = 0; i < nvec; i++) {
+            int groupNum = 0;
+            double min = group[0][i];
+            for (int p = 1; p < k; p++) {
+                if (group[p][i] < min) {
+                    min = group[p][i];
+                    groupNum = p;
+                }
+            }
+            rtn[groupNum].push_back(i);
+            rtn_distance[groupNum].push_back(min);
+            newGroup[groupNum].push_back(count_array[i]);
+        }
+        
+        for (int q = 0; q < k; q++) {
+            if (newGroup[q].size() != 0) {
+                std::vector<int> sum(array_size,0);
+                for (std::vector<std::vector<int>>::iterator it = newGroup[q].begin(); it != newGroup[q].end(); it++) {
+                    for(int f = 0; f < array_size; f++) {
+                        sum[f] += (*it)[f];
+                    }
+                }
+                for(int g = 0; g < array_size; g++) {
+                    sum[g] /= newGroup[q].size();
+                }
+                for (int d = 0; d < array_size; d++) {
+                    newCluster[q][d] = sum[d];// calculate mean of distribution for a cluster
+                }
+            }
+        }
+        
+        for (int t = 0; t < k; t++) {
+            for (int r = 0; r < array_size; r++) {
+                if (newCluster[t][r] != cluster[t][r])
+                    converge = false;
+            }
+        }
+        
+        //        std::cout << "rtn value: " << std::endl;
+        //        for (std::vector<std::vector<int>>::iterator itr = rtn.begin(); itr != rtn.end(); itr++) {
+        //            std::cout << "Cluster: ";
+        //            for (std::vector<int>::iterator itr2 = itr->begin(); itr2 != itr->end(); itr2++) {
+        //                std::cout << *itr2 << " ";
+        //            }
+        //            std::cout << std::endl;
+        //        }
+        //        std:: cout << std::endl;
+        
+        if (!converge) {
+            for (int d = 0; d < k; d++) {
+                cluster[d] = newCluster[d];
+                rtn[d].clear();
+                rtn_distance[d].clear();
+                newGroup[d].clear();
+            }
+        }
+        //        std::cout << "newCluster: ";
+        //        for (int i = 0; i < k; i++) {
+        //            std::cout << newCluster[i] << " ";
+        //        }
+        //        std:: cout << std::endl;
+        
+    } while (!converge);
+    
+    
+    return std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>>(rtn, rtn_distance);
+}

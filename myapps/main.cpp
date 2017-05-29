@@ -276,6 +276,8 @@ int main(int argc, const char ** argv) {
 //    }
     
     //the final number of clusters, put final centroids and radius of the clusters in the profile
+    //count arrays in the profile are updated as well
+    pf.reset_count_arrays();
     int number_of_clusters = 0;
     for (size_t i = 0; i < cluster.size(); i++) {
         if (cluster[i].size() > (num_graphs - num_monitor) * 0.2) {
@@ -287,6 +289,9 @@ int main(int argc, const char ** argv) {
                     max_dis = *it;
             }
             pf.add_max_distance_from_centroid(max_dis);
+            for (size_t j = 0; j < cluster[i].size(); j++) {
+                pf.add_array(count_arrays[cluster[i][j]]);
+            }
         }
     }
     
@@ -294,9 +299,10 @@ int main(int argc, const char ** argv) {
     assert(number_of_clusters == (int)pf.get_centroids().size());
     assert(number_of_clusters == (int)pf.get_distances().size());
     //for debugging, print out final number of clusters, max distance and centroids
-    std::cout << "Final number of clusters:" << number_of_clusters << std::endl;
-    std::cout << "Final size of centroids:" << pf.get_centroids().size() << std::endl;
-    std::cout << "Final size of distances:" << pf.get_distances().size() << std::endl;
+    std::cout << "Final number of clusters: " << number_of_clusters << std::endl;
+    std::cout << "Final size of centroids: " << pf.get_centroids().size() << std::endl;
+    std::cout << "Final size of distances: " << pf.get_distances().size() << std::endl;
+    std::cout << "Final number of count array in the profile: " << pf.get_count_arrays().size() << std::endl;
     std::vector<std::vector<int>> profile_centroids = pf.get_centroids();
 //    for (std::vector<std::vector<int>>::iterator it = profile_centroids.begin(); it != profile_centroids.end(); it++) {
 //        std::cout << "Centroids: ";
@@ -344,8 +350,37 @@ int main(int argc, const char ** argv) {
         
         if (!need_recluster)
             std::cout << "This monitored instance is normal..." << std::endl;
-        else
+        else {
             std::cout << "This monitored instance is outside the radius of any cluster... Recluster now..." << std::endl;
+            std::vector<std::vector<int>> total_count_arrays = pf.get_count_arrays();
+            total_count_arrays.push_back(monitored.count_array);
+            std::cout << "# of arrays in total_count_arrays: " << total_count_arrays.size() << std::endl;
+            std::vector<std::vector<int>> total_centroids = pf.get_centroids();
+            total_centroids.push_back(monitored.count_array);
+            std::cout << "# of arrays in total_centroids: " << total_centroids.size() << std::endl;
+            
+            std::pair<std::vector<std::vector<int>>, std::vector<std::vector<double>>> cluster_monitor_results = kmeans_monitor(total_centroids.size(), total_count_arrays, total_centroids);
+            std::vector<std::vector<int>> cluster_monitor = cluster_monitor_results.first;
+            
+            //for debugging: print out elements in a cluster
+            for (std::vector<std::vector<int>>::iterator it = cluster_monitor.begin(); it != cluster_monitor.end(); it++) {
+                std::cout << "ReCluster (Monitoring): ";
+                for (std::vector<int>::iterator itr2 = it->begin(); itr2 != it->end(); itr2++) {
+                    std::cout << *itr2 << " ";
+                }
+                std::cout << std::endl;
+            }
+            
+            bool bad_instance = false;
+            for (size_t j = 0; j < cluster_monitor.size(); j++) {
+                if (cluster_monitor[j].size() == 1 && cluster_monitor[j][0] == (int)pf.get_count_arrays().size()) {
+                    std::cout << "This monitored instance is abnormal!" << std::endl;
+                    bad_instance = true;
+                }
+            }
+            if (!bad_instance) std::cout << "This monitored instance is actually normal..." << std::endl;
+            
+        }
         
         monitored.count_array.clear();
         monitored.label_map.clear();
