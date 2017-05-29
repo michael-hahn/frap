@@ -1,3 +1,7 @@
+# Fault-detection through Runtime Analysis of Provenance
+
+[![DOI](https://zenodo.org/badge/82714093.svg)](https://zenodo.org/badge/latestdoi/82714093)
+
 #### How to run vertexlabel_static: 
 
 Make vertexlabel_static application by running the following command:
